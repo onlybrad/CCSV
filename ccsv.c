@@ -5,7 +5,7 @@
 #include "file.h"
 #include "util.h"
 
-static enum CCSV_Error CCSV_parse_next_row(struct CCSV *const csv, struct CCSV_Strings *const row) {
+static enum CCSV_Error CCSV_parse_next_row(struct CCSV *const csv, CCSV_Row *const row) {
     assert(csv != NULL);
     assert(row != NULL);
 
@@ -130,10 +130,8 @@ static enum CCSV_Error CCSV_parse_next_row(struct CCSV *const csv, struct CCSV_S
         case CCSV_STATE_ESCAPING:
             switch(token->type) {
             case CCSV_TOKEN_STRING:
-                if(token->type != CCSV_TOKEN_DBLQUOTE) {
-                    state = CCSV_STATE_DONE;
-                    error = CCSV_ERROR_MISSING_DBLQUOTE;
-                }
+                state = CCSV_STATE_DONE;
+                error = CCSV_ERROR_MISSING_DBLQUOTE;
                 break;
 
             case CCSV_TOKEN_SEPARATOR:
