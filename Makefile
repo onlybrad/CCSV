@@ -18,6 +18,11 @@ static++: $(SOURCE)
 	ar rcs ccsv++.a *.o
 	make cleanup
 
+debug_static: $(SOURCE)
+	$(CC) $(INCLUDES) $(FLAGS) $(STD) -g -O0 -c $(SOURCE)
+	ar rcs ccsvd.a *.o
+	make cleanup
+
 all: static static++ test1.exe test1++.exe
 
 test1.exe: ./tests/test1.c $(SOURCE)

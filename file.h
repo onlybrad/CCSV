@@ -28,8 +28,8 @@ struct CCSV_FileContents {
     unsigned       size;
 };
 
-void                          CCSV_FileContents_init(struct CCSV_FileContents*);
-void                          CCSV_FileContents_free(struct CCSV_FileContents*);
+void                         CCSV_FileContents_init(struct CCSV_FileContents*);
+void                         CCSV_FileContents_free(struct CCSV_FileContents*);
 enum CCSV_FileContents_Error CCSV_FileContents_get(struct CCSV_FileContents*, const char *path);
 enum CCSV_FileContents_Error CCSV_FileContents_put(const struct CCSV_FileContents*, const char *path);
 

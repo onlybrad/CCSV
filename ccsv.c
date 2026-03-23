@@ -54,8 +54,10 @@ static enum CCSV_Error CCSV_parse_next_row(struct CCSV *const csv, CCSV_Row *con
 
             case CCSV_TOKEN_NEWLINE:
             case CCSV_TOKEN_CARRIAGE:
+                if(!CCSV_Strings_push(row, "", (unsigned)static_strlen(""), &csv->arenas)) {
+                    error = CCSV_ERROR_MEMORY;
+                }
                 state = CCSV_STATE_DONE;
-                error = CCSV_ERROR_TRAILING_SEPARATOR;
                 break;
 
             case CCSV_TOKEN_DBLQUOTE:
@@ -135,9 +137,10 @@ static enum CCSV_Error CCSV_parse_next_row(struct CCSV *const csv, CCSV_Row *con
                 break;
 
             case CCSV_TOKEN_SEPARATOR:
-                if(!(CCSV_Strings_concat(&csv->temp_strings, row, &csv->temp_arenas))) {
+                if(!(CCSV_Strings_concat(&csv->temp_strings, row, &csv->arenas))) {
                     state = CCSV_STATE_DONE;
                     error = CCSV_ERROR_MEMORY;
+                    break;
                 }
                 CCSV_Strings_reset(&csv->temp_strings);
                 state = CCSV_STATE_COLUMN;
@@ -148,8 +151,10 @@ static enum CCSV_Error CCSV_parse_next_row(struct CCSV *const csv, CCSV_Row *con
                 break;
 
             case CCSV_TOKEN_NEWLINE:
-                if(!(CCSV_Strings_concat(&csv->temp_strings, row, &csv->temp_arenas))) {
+                if(!(CCSV_Strings_concat(&csv->temp_strings, row, &csv->arenas))) {
+                    state = CCSV_STATE_DONE;
                     error = CCSV_ERROR_MEMORY;
+                    break;
                 }
                 CCSV_Strings_reset(&csv->temp_strings);
                 state = CCSV_STATE_DONE;
@@ -174,7 +179,9 @@ static enum CCSV_Error CCSV_parse_next_row(struct CCSV *const csv, CCSV_Row *con
 
         case CCSV_STATE_ESCAPING_CARRIAGE:
             if(!(CCSV_Strings_concat(&csv->temp_strings, row, &csv->arenas))) {
+                state = CCSV_STATE_DONE;
                 error = CCSV_ERROR_MEMORY;
+                break;
             }
             CCSV_Strings_reset(&csv->temp_strings);
             state = CCSV_STATE_DONE;
@@ -187,23 +194,19 @@ static enum CCSV_Error CCSV_parse_next_row(struct CCSV *const csv, CCSV_Row *con
             assert(false && "this should be unreachable");
             break;
         }
-
     }
 
     switch(state) {
     case CCSV_STATE_ESCAPING:
-        if(!(CCSV_Strings_concat(&csv->temp_strings, row, &csv->temp_arenas))) {
+        if(!(CCSV_Strings_concat(&csv->temp_strings, row, &csv->arenas))) {
             error = CCSV_ERROR_MEMORY;
+            break;
         }
         CCSV_Strings_reset(&csv->temp_strings);
         break;
 
     case CCSV_STATE_ENCLOSURE:
         error = CCSV_ERROR_MISSING_DBLQUOTE;
-        break;
-
-    case CCSV_STATE_COLUMN:
-        error = CCSV_ERROR_TRAILING_SEPARATOR;
         break;
 
     default:;
@@ -229,11 +232,11 @@ static enum CCSV_Error CCSV_init_memory(struct CCSV *const csv) {
         return CCSV_ERROR_MEMORY;
     }
 
-    if(!CCSV_Arena_create_node(&csv->arenas.chars, csv->counters.chars * sizeof(char))) {
+    if(!CCSV_Arena_create_node(&csv->arenas.chars, csv->counters.chars * (unsigned)sizeof(char))) {
         return CCSV_ERROR_MEMORY;
     }
 
-    if(!CCSV_Arena_create_node(&csv->temp_arenas.chars, csv->counters.chars * sizeof(char))) {
+    if(!CCSV_Arena_create_node(&csv->temp_arenas.chars, csv->counters.chars * (unsigned)sizeof(char))) {
         return CCSV_ERROR_MEMORY;
     }
 
