@@ -431,6 +431,7 @@ static size_t CCSV_write_number(char *const write_ptr, const unsigned char *cons
     assert(write_ptr != NULL);
     assert(read_ptr != NULL);
     assert(type != CCSV_TYPE_STRING);
+    assert(type != CCSV_TYPE_BOOL);
     
     union CCSV_Value {
         char               c;
