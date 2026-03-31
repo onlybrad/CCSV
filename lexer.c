@@ -6,12 +6,12 @@
 #include "token.h"
 #include "util.h"
 
-static unsigned CCSV_Lexer_read_string(const struct CCSV_Lexer *const lexer) {
+static size_t CCSV_Lexer_read_string(const struct CCSV_Lexer *const lexer) {
     assert(lexer != NULL);
 
-    const unsigned position = lexer->position; 
+    const size_t position = lexer->position; 
 
-    unsigned i;
+    size_t i;
     for(i = 0U; position + i < lexer->length; i++) {
         const char c = lexer->data[position + i];
         
@@ -23,7 +23,7 @@ static unsigned CCSV_Lexer_read_string(const struct CCSV_Lexer *const lexer) {
     return i;
 }
 
-EXTERN_C void CCSV_Lexer_init(struct CCSV_Lexer *const lexer, const char *const data, const unsigned length, const char separator) {
+EXTERN_C void CCSV_Lexer_init(struct CCSV_Lexer *const lexer, const char *const data, const size_t length, const char separator) {
     assert(lexer != NULL);
     assert(data != NULL);
     assert(length > 0U);
@@ -31,7 +31,7 @@ EXTERN_C void CCSV_Lexer_init(struct CCSV_Lexer *const lexer, const char *const 
 
     lexer->data      = data;
     lexer->length    = length;
-    lexer->position  = 0U;
+    lexer->position  = 0;
     lexer->separator = separator;
 }
 
@@ -40,7 +40,7 @@ EXTERN_C bool CCSV_Lexer_tokenize(struct CCSV_Lexer *const lexer, struct CCSV_To
     assert(tokens != NULL);
     assert(counters != NULL);
 
-    unsigned current_column_count = 0U;
+    size_t current_column_count = 0;
 
     while(lexer->position < lexer->length) {
         struct CCSV_Token *token = CCSV_Tokens_next(tokens);
@@ -52,35 +52,35 @@ EXTERN_C bool CCSV_Lexer_tokenize(struct CCSV_Lexer *const lexer, struct CCSV_To
         if(*token->value == lexer->separator) {
             token->length    = 1U;
             token->type      = CCSV_TOKEN_SEPARATOR;
-            counters->chars += (unsigned)sizeof(lexer->separator);
+            counters->chars += sizeof(lexer->separator);
             current_column_count++;
         } else switch(*token->value) {
         case '"':
             token->length    = 1U;
             token->type      = CCSV_TOKEN_DBLQUOTE;
-            counters->chars += (unsigned)sizeof((char)'"');
+            counters->chars += sizeof((char)'"');
             break;
 
         case '\r':
-            token->length    = 1U;
-            token->type      = CCSV_TOKEN_CARRIAGE;
-            counters->chars += (unsigned)sizeof((char)'\r');
+            token->length         = 1U;
+            token->type           = CCSV_TOKEN_CARRIAGE;
+            counters->chars      += sizeof((char)'\r');
             counters->max_columns = MAX(counters->max_columns, current_column_count);
-            current_column_count = 0U;
+            current_column_count  = 0U;
             break;
 
         case '\n':
-            token->length    = 1U;
-            token->type      = CCSV_TOKEN_NEWLINE;
-            counters->chars += (unsigned)sizeof((char)'\n');
+            token->length         = 1U;
+            token->type           = CCSV_TOKEN_NEWLINE;
+            counters->chars      += sizeof((char)'\n');
             counters->max_columns = MAX(counters->max_columns, current_column_count);
-            current_column_count = 0U;
+            current_column_count  = 0U;
             break;
 
         default:
             token->length    = CCSV_Lexer_read_string(lexer);
             token->type      = CCSV_TOKEN_STRING;
-            counters->chars += token->length + (unsigned)sizeof((char)'\0');
+            counters->chars += token->length + sizeof((char)'\0');
             counters->strings++;
         }
 

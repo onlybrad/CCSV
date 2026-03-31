@@ -11,12 +11,12 @@ extern "C" {
 
 struct CCSV_Lexer {
     const char *data;
-    unsigned    length,
+    size_t      length,
                 position;
     char        separator;
 };
 
-void CCSV_Lexer_init(struct CCSV_Lexer*, const char *data, unsigned length, char separator);
+void CCSV_Lexer_init(struct CCSV_Lexer*, const char *data, size_t length, char separator);
 bool CCSV_Lexer_tokenize(struct CCSV_Lexer*, struct CCSV_Tokens*, struct CCSV_Counters*);
 
 #endif

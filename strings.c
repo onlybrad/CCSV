@@ -16,7 +16,7 @@ EXTERN_C void CCSV_Strings_init(struct CCSV_Strings *const strings) {
     strings->total_length = 0U;
 }
 
-EXTERN_C bool CCSV_Strings_reserve(struct CCSV_Strings *const strings, unsigned capacity, struct CCSV_Arenas *const arenas) {
+EXTERN_C bool CCSV_Strings_reserve(struct CCSV_Strings *const strings, size_t capacity, struct CCSV_Arenas *const arenas) {
     assert(strings != NULL);
     assert(arenas != NULL);
 
@@ -40,17 +40,17 @@ EXTERN_C bool CCSV_Strings_reserve(struct CCSV_Strings *const strings, unsigned 
     return true;
 }
 
-EXTERN_C bool CCSV_Strings_push(struct CCSV_Strings *const strings, const char *const string, const unsigned length, struct CCSV_Arenas *const arenas) {
+EXTERN_C bool CCSV_Strings_push(struct CCSV_Strings *const strings, const char *const string, const size_t length, struct CCSV_Arenas *const arenas) {
     assert(strings != NULL);
     assert(string != NULL);
 
-    if(strings->count > UINT_MAX - 1U) {
+    if(strings->count > SIZE_MAX - 1) {
         return false;
     }
 
     if(strings->count == strings->capacity) {
         bool success;
-        unsigned capacity = CCSV_safe_unsigned_mult(strings->capacity, 2U, &success);
+        const size_t capacity = CCSV_safe_mult(strings->capacity, 2, &success);
         if(!success) {
             return false;
         }
@@ -60,7 +60,7 @@ EXTERN_C bool CCSV_Strings_push(struct CCSV_Strings *const strings, const char *
         }
     }
 
-    char *const copy = CCSV_ARENA_ALLOC(&arenas->chars, (unsigned)length + 1U, char);
+    char *const copy = CCSV_ARENA_ALLOC(&arenas->chars, length + 1U, char);
     if(copy == NULL) {
         return false;
     }
@@ -68,19 +68,19 @@ EXTERN_C bool CCSV_Strings_push(struct CCSV_Strings *const strings, const char *
     copy[length] = '\0';
 
     strings->data[strings->count++] = copy;
-    strings->total_length          += (unsigned)length;
+    strings->total_length          += length;
 
     return true;
 }
 
 EXTERN_C bool CCSV_Strings_push_nocopy(struct CCSV_Strings *const strings, char *const string, struct CCSV_Arenas *const arenas) {
-    if(strings->count > UINT_MAX - 1U) {
+    if(strings->count > SIZE_MAX - 1U) {
         return false;
     }
 
     if(strings->count == strings->capacity) {
         bool success;
-        unsigned capacity = CCSV_safe_unsigned_mult(strings->capacity, 2U, &success);
+        const size_t capacity = CCSV_safe_mult(strings->capacity, 2, &success);
         if(!success) {
             return false;
         }
@@ -91,12 +91,9 @@ EXTERN_C bool CCSV_Strings_push_nocopy(struct CCSV_Strings *const strings, char 
     }
 
     const size_t length = strlen(string);
-    if(length >= UINT_MAX) {
-        return false;
-    }
 
     strings->data[strings->count++] = string;
-    strings->total_length          += (unsigned)length;
+    strings->total_length          += length;
 
     return true;
 }
@@ -114,9 +111,8 @@ bool CCSV_Strings_concat(const struct CCSV_Strings *const src, struct CCSV_Strin
     concat_string[0] = '\0';
     char *const concat_string_start = concat_string;
 
-    for(unsigned i = 0U; i < src->count; i++) {
+    for(size_t i = 0; i < src->count; i++) {
         const size_t length = strlen(src->data[i]);
-        assert(length < UINT_MAX);
         strcpy(concat_string, src->data[i]);
         concat_string += length;
     }

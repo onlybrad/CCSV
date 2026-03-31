@@ -33,6 +33,10 @@ extern "C" {
     #define static_strlen(STR) (sizeof(STR) - 1)
 #endif
 
+#ifndef ARRAY_LENGTH
+    #define ARRAY_LENGTH(ARR) (sizeof(ARR)/sizeof(ARR[0]))
+#endif
+
 #ifndef UNSIGNED_TO_VOID_PTR
     #define UNSIGNED_TO_VOID_PTR(UNSIGNED)((void*)(uintptr_t)(UNSIGNED))
 #endif
@@ -48,11 +52,48 @@ extern "C" {
     #endif
 #endif
 
+#ifndef CCSV_OFFSETOF
+    /* C++ */
+    #if defined(__cplusplus)
+
+        #if __cplusplus >= 201103L
+            #include <cstddef>
+            #define CCSV_OFFSETOF(type, member) offsetof(type, member)
+        #else
+            #if defined(__GNUC__) || defined(__clang__)
+                #define CCSV_OFFSETOF(type, member) __builtin_offsetof(type, member)
+            #elif defined(_MSC_VER)
+                #include <stddef.h>
+                #define CCSV_OFFSETOF(type, member) offsetof(type, member)
+            #else
+                #define CCSV_OFFSETOF(type, member) ((size_t)&(((type*)0)->member))
+            #endif
+        #endif
+
+    /* C */
+    #else
+        #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 198901L)
+            #include <stddef.h>
+            #define CCSV_OFFSETOF(type, member) offsetof(type, member)
+        #else
+            #if defined(__GNUC__) || defined(__clang__)
+                #define CCSV_OFFSETOF(type, member) __builtin_offsetof(type, member)
+            #else
+                #define CCSV_OFFSETOF(type, member) ((size_t)&(((type*)0)->member))
+            #endif
+        #endif
+
+    #endif
+#endif
+
+#ifndef CCSV_MEMBERSIZE
+    #define CCSV_MEMBERSIZE(TYPE, MEMBER) sizeof(((TYPE *)NULL)->MEMBER)
+#endif
+
 void     CCSV_print_bytes   (const void *buffer, const size_t size);
 uint64_t CCSV_usec_timestamp(void);
 
-unsigned CCSV_safe_unsigned_mult          (unsigned a, unsigned b, bool *success);
-unsigned CCSV_safe_unsigned_add           (unsigned a, unsigned b, bool *success);
+size_t   CCSV_safe_mult              (size_t a, size_t b, bool *success);
 bool     CCSV_check_unsigned_mult_overflow(unsigned a, unsigned b);
 
 #endif

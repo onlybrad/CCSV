@@ -14,7 +14,7 @@ EXTERN_C void CCSV_Tokens_init(struct CCSV_Tokens *const tokens) {
     tokens->count    = 0U;
 }
 
-EXTERN_C bool CCSV_Tokens_reserve(struct CCSV_Tokens *const tokens, unsigned capacity) {
+EXTERN_C bool CCSV_Tokens_reserve(struct CCSV_Tokens *const tokens, size_t capacity) {
     assert(tokens != NULL);
 
     if(capacity < CCSV_TOKENS_MINIMUM_CAPACITY) {
@@ -52,9 +52,13 @@ EXTERN_C void CCSV_Tokens_free(struct CCSV_Tokens *const tokens) {
 EXTERN_C struct CCSV_Token *CCSV_Tokens_next(struct CCSV_Tokens *const tokens) {
     assert(tokens != NULL);
 
+    if(tokens->count > SIZE_MAX - 1) {
+        return NULL;
+    }
+
     if(tokens->count == tokens->capacity) {
         bool success;
-        const unsigned new_capacity = CCSV_safe_unsigned_mult(tokens->capacity, 2U, &success);
+        const size_t new_capacity = CCSV_safe_mult(tokens->capacity, 2, &success);
         if(!success || !CCSV_Tokens_reserve(tokens, new_capacity)) {
             return NULL;
         }

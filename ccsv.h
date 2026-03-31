@@ -5,6 +5,8 @@ extern "C" {
 #ifndef CCSV_H
 #define CCSV_H
 
+#include <stdint.h>
+
 #include "tokens.h"
 #include "counters.h"
 #include "ccsv.h"
@@ -25,7 +27,7 @@ enum CCSV_Error {
 struct CCSV {
     struct CCSV_Token       *current_token;
     const char              *data;
-    unsigned                 length;
+    int64_t                  length;
     struct CCSV_FileContents file_contents;
     struct CCSV_Counters     counters;
     struct CCSV_Tokens       tokens;
@@ -35,10 +37,54 @@ struct CCSV {
     char                     separator;
 };
 
-enum CCSV_Error CCSV_from_string(struct CCSV*, const char *data, unsigned length, char separator);
+enum CCSV_Type {
+    CCSV_TYPE_CHAR,
+    CCSV_TYPE_UCHAR,
+    CCSV_TYPE_SCHAR,
+    CCSV_TYPE_SHORT,
+    CCSV_TYPE_USHORT,
+    CCSV_TYPE_BOOL,
+    CCSV_TYPE_INT,
+    CCSV_TYPE_UINT,
+    CCSV_TYPE_LONG,
+    CCSV_TYPE_ULONG,
+    CCSV_TYPE_LLONG,
+    CCSV_TYPE_ULLONG,
+    CCSV_TYPE_FLOAT,
+    CCSV_TYPE_DOUBLE,
+    CCSV_TYPE_LDOUBLE,
+    CCSV_TYPE_INT8,
+    CCSV_TYPE_UINT8,
+    CCSV_TYPE_INT16,
+    CCSV_TYPE_UINT16,
+    CCSV_TYPE_INT32,
+    CCSV_TYPE_UINT32,
+    CCSV_TYPE_INT64,
+    CCSV_TYPE_UINT64,
+    CCSV_TYPE_INTMAX,
+    CCSV_TYPE_UINTMAX,
+    CCSV_TYPE_SIZE,
+    CCSV_TYPE_STRING
+};
+
+struct CCSV_StructMember {
+    enum CCSV_Type type;
+    size_t         offset;
+    bool           needs_escape;
+};
+
+struct CCSV_Struct {
+    const void               *data;
+    struct CCSV_StructMember *members;
+    unsigned                  member_count;
+};
+
+enum CCSV_Error CCSV_from_string(struct CCSV*, const char *data, int64_t length, char separator);
 enum CCSV_Error CCSV_from_file  (struct CCSV*, const char *path, char separator);
-void            CCSV_free       (struct CCSV*);
 enum CCSV_Error CCSV_next_row   (struct CCSV*, CCSV_Row*);
+void            CCSV_free       (struct CCSV*);
+bool            CCSV_to_file    (struct CCSV_Struct *headers, struct CCSV_Struct structs[], unsigned struct_count, const char *path, const char separator);
+
 
 #endif
 

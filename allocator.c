@@ -75,31 +75,31 @@ const struct CCSV_AllocationStats *CCSV_get_allocation_stats(void) {
 
 #endif
 
-static struct CCSV_ArenaNode *CCSV_ArenaNode_new(const unsigned size) {
+static struct CCSV_ArenaNode *CCSV_ArenaNode_new(const size_t size) {
     assert(size > 0);
 
-    struct CCSV_ArenaNode *const node = (struct CCSV_ArenaNode *)CCSV_CALLOC(sizeof(*node) + (size_t)size, sizeof(unsigned char));
+    struct CCSV_ArenaNode *const node = (struct CCSV_ArenaNode *)CCSV_CALLOC(sizeof(*node) + size, sizeof(unsigned char));
     if(node == NULL) {
         return NULL;
     }
 
     node->size   = size;
-    node->offset = 0U;
+    node->offset = 0;
     node->next   = NULL;
     
     return node;
 }
 
-static bool CCSV_Arena_create_next_node(struct CCSV_Arena *const arena, const unsigned size) {
+static bool CCSV_Arena_create_next_node(struct CCSV_Arena *const arena, const size_t size) {
     assert(arena != NULL);
     assert(size > 0);
 
-    unsigned node_size = arena->current->size;
+    size_t node_size = arena->current->size;
     if(node_size < size) {
-        if(node_size > UINT_MAX / 2U) {
+        if(node_size > (size_t)UINT_MAX / 2) {
             node_size = size;
         } else do {
-            node_size *= 2U;
+            node_size *= 2;
         } while(node_size < size);
     }
 
@@ -137,7 +137,7 @@ static bool CCSV_Arena_create_next_node(struct CCSV_Arena *const arena, const un
     return true;
 }
 
-EXTERN_C void CCSV_Arena_init(struct CCSV_Arena *const arena, const unsigned node_max, const char *const name) {
+EXTERN_C void CCSV_Arena_init(struct CCSV_Arena *const arena, const size_t node_max, const char *const name) {
     assert(arena != NULL);
 
     arena->node_count = 0U;
@@ -153,7 +153,7 @@ EXTERN_C void CCSV_Arena_init(struct CCSV_Arena *const arena, const unsigned nod
 
 }
 
-EXTERN_C bool CCSV_Arena_create_node(struct CCSV_Arena *const arena, unsigned size) {
+EXTERN_C bool CCSV_Arena_create_node(struct CCSV_Arena *const arena, size_t size) {
     assert(arena != NULL);
     assert(size > 0U);
 
@@ -199,19 +199,19 @@ EXTERN_C void CCSV_Arena_reset(struct CCSV_Arena *const arena) {
     arena->head->offset = 0U;
 }
 
-EXTERN_C void *CCSV_Arena_alloc_objects(struct CCSV_Arena *const arena, const unsigned count, const unsigned size, const unsigned alignment) {
+EXTERN_C void *CCSV_Arena_alloc_objects(struct CCSV_Arena *const arena, const size_t count, const size_t size, const size_t alignment) {
     assert(arena != NULL);
     assert(count > 0U);
     assert(size > 0U);
     assert((alignment & (alignment - 1U)) == 0U);
 
     bool success;
-    const unsigned total_size = CCSV_safe_unsigned_mult(count, size, &success);
+    const size_t total_size = CCSV_safe_mult(count, size, &success);
     
     return success ? CCSV_Arena_alloc(arena, total_size, alignment) : NULL;
 }
 
-EXTERN_C void *CCSV_Arena_alloc(struct CCSV_Arena *const arena, const unsigned size, unsigned alignment) {
+EXTERN_C void *CCSV_Arena_alloc(struct CCSV_Arena *const arena, const size_t size, size_t alignment) {
     assert(arena != NULL);
     assert(size > 0U);
     assert((alignment & (alignment - 1U)) == 0U);
@@ -226,7 +226,7 @@ EXTERN_C void *CCSV_Arena_alloc(struct CCSV_Arena *const arena, const unsigned s
 
     const uintptr_t start_address = (uintptr_t)(CCSV_GET_DATA(arena->current) + arena->current->offset);
     uintptr_t aligned_address     = (start_address + ((uintptr_t)alignment - 1U)) & ~((uintptr_t)alignment - 1U);
-    unsigned padding              = (unsigned)(aligned_address - start_address);
+    size_t padding              = (size_t)(aligned_address - start_address);
 
     if(arena->current->offset + padding + size > arena->current->size) {
         if(!CCSV_Arena_create_next_node(arena, size)) {
@@ -241,7 +241,7 @@ EXTERN_C void *CCSV_Arena_alloc(struct CCSV_Arena *const arena, const unsigned s
     return (void*)aligned_address;
 }
 
-bool CCSV_Arena_reserve(struct CCSV_Arena *const arena, const unsigned size, unsigned alignment) {
+bool CCSV_Arena_reserve(struct CCSV_Arena *const arena, const size_t size, size_t alignment) {
     assert(arena != NULL);
     assert(size > 0U);
     assert((alignment & (alignment - 1U)) == 0U);
@@ -256,7 +256,7 @@ bool CCSV_Arena_reserve(struct CCSV_Arena *const arena, const unsigned size, uns
 
     const uintptr_t start_address = (uintptr_t)(CCSV_GET_DATA(arena->current) + arena->current->offset);
     uintptr_t aligned_address     = (start_address + ((uintptr_t)alignment - 1U)) & ~((uintptr_t)alignment - 1U);
-    unsigned padding              = (unsigned)(aligned_address - start_address);
+    size_t padding              = (size_t)(aligned_address - start_address);
 
     if(arena->current->offset + padding + size <= arena->current->size) {
         return true;
@@ -266,22 +266,18 @@ bool CCSV_Arena_reserve(struct CCSV_Arena *const arena, const unsigned size, uns
 }
 
 
-EXTERN_C char *CCSV_Arena_strdup(struct CCSV_Arena *const arena, const char *const str, unsigned *const length) {
+EXTERN_C char *CCSV_Arena_strdup(struct CCSV_Arena *const arena, const char *const str, size_t *const length) {
     assert(arena != NULL);
     assert(str != NULL);
 
     const size_t len = strlen(str);
-    if(len >= (size_t)UINT_MAX) {
-        return NULL;
-    }
-
-    char *const copy = CCSV_ARENA_ALLOC(arena, (unsigned)len + 1U, char);
+    char *const copy = CCSV_ARENA_ALLOC(arena, len + 1U, char);
     if(copy == NULL) {
         return NULL;
     }
 
     if(length != NULL) {
-        *length = (unsigned)len;
+        *length = len;
     }
     
     return strcpy(copy, str);

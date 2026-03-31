@@ -42,7 +42,7 @@ EXTERN_C uint64_t CCSV_usec_timestamp(void) {
 #endif
 }
 
-EXTERN_C unsigned CCSV_safe_unsigned_mult(const unsigned a, const unsigned b, bool *const success) {
+EXTERN_C size_t CCSV_safe_mult(const size_t a, const size_t b, bool *const success) {
     assert(success != NULL);
 
     if(b == 0U) {
@@ -50,27 +50,11 @@ EXTERN_C unsigned CCSV_safe_unsigned_mult(const unsigned a, const unsigned b, bo
         return 0U;
     }
 
-    if(a > UINT_MAX / b) {
+    if(a > SIZE_MAX / b) {
         *success = false;
         return 0U;
     }
 
     *success = true;
     return a * b;
-}
-
-EXTERN_C unsigned CCSV_safe_unsigned_add(const unsigned a, const unsigned b, bool *const success) {
-    assert(success != NULL);
-
-    if(a > UINT_MAX - b) {
-        *success = false;
-        return 0U;
-    }
-
-    *success = true;
-    return a + b;
-}
-
-EXTERN_C bool CCSV_check_unsigned_mult_overflow(const unsigned a, const unsigned b) {
-    return b != 0U && a > UINT_MAX / b;
 }

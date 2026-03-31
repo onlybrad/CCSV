@@ -67,10 +67,10 @@ EXTERN_C void CCSV_FileContents_init(struct CCSV_FileContents *const file_conten
     assert(file_contents != NULL);
 
     file_contents->data = NULL;
-    file_contents->size = 0U;
+    file_contents->size = 0;
 }
 
-void CCSV_FileContents_free(struct CCSV_FileContents *const file_contents) {
+EXTERN_C void CCSV_FileContents_free(struct CCSV_FileContents *const file_contents) {
     assert(file_contents != NULL);
 
     CCSV_FREE(file_contents->data);
@@ -106,11 +106,6 @@ EXTERN_C enum CCSV_FileContents_Error CCSV_FileContents_get(struct CCSV_FileCont
             break;
         }
 
-        if(length >= (int64_t)UINT_MAX) {
-            error = CCSV_FILECONTENTS_ERROR_TOO_LARGE;
-            break;
-        }
-
         if(CCSV_fseek(file, 0, SEEK_SET) != 0) {
             error = CCSV_FILECONTENTS_ERROR_FSEEK;
             break;
@@ -122,20 +117,15 @@ EXTERN_C enum CCSV_FileContents_Error CCSV_FileContents_get(struct CCSV_FileCont
             error = CCSV_FILECONTENTS_ERROR_MEMORY;
             break;
         }
-        file_contents->data[length] = '\0';
         
-        if(fread(
-            file_contents->data,
-            sizeof(unsigned char),
-            (size_t)length, 
-            file
-        ) != (size_t)length) {
+        if(fread(file_contents->data, sizeof(unsigned char), (size_t)length, file) != (size_t)length) {
             error = CCSV_FILECONTENTS_ERROR_FREAD;
             break;
         }
+        file_contents->data[length] = '\0';
 
         error               = CCSV_FILECONTENTS_ERROR_NONE;
-        file_contents->size = (unsigned)length;
+        file_contents->size = length;
     } while(0);
 
     if(error != CCSV_FILECONTENTS_ERROR_NONE) {
@@ -147,7 +137,7 @@ EXTERN_C enum CCSV_FileContents_Error CCSV_FileContents_get(struct CCSV_FileCont
     return error;
 }
 
-enum CCSV_FileContents_Error CCSV_FileContents_put(const struct CCSV_FileContents *const file_contents, const char *const path) {
+EXTERN_C enum CCSV_FileContents_Error CCSV_FileContents_put(const struct CCSV_FileContents *const file_contents, const char *const path) {
     assert(file_contents != NULL);
     assert(path != NULL);
     assert(path[0] != '\0');
@@ -162,12 +152,7 @@ enum CCSV_FileContents_Error CCSV_FileContents_put(const struct CCSV_FileContent
         return error;
     }
 
-    if(fwrite(
-        file_contents->data,
-        sizeof(file_contents->data[0]),
-        size,
-        file
-    ) != size) {
+    if(fwrite(file_contents->data, sizeof(file_contents->data[0]), size, file) != size) {
         fclose(file);
         return CCSV_FILECONTENTS_ERROR_FWRITE;
     }

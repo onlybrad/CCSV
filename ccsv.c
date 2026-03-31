@@ -1,9 +1,16 @@
 #include <assert.h>
+#include <string.h>
+#include <inttypes.h>
 
 #include "ccsv.h"
 #include "lexer.h"
 #include "file.h"
 #include "util.h"
+
+struct CCSV_Sizes {
+    size_t raw;
+    size_t escaped;
+};
 
 static enum CCSV_Error CCSV_parse_next_row(struct CCSV *const csv, CCSV_Row *const row) {
     assert(csv != NULL);
@@ -219,7 +226,7 @@ static enum CCSV_Error CCSV_init_memory(struct CCSV *const csv) {
     assert(csv != NULL);
 
     bool success;
-    const unsigned strings_size = CCSV_safe_unsigned_mult(csv->counters.strings, (unsigned)sizeof(char*), &success);
+    const size_t strings_size = CCSV_safe_mult(csv->counters.strings, sizeof(char*), &success);
     if(!success) {
         return CCSV_ERROR_TOO_LARGE;
     }
@@ -243,14 +250,15 @@ static enum CCSV_Error CCSV_init_memory(struct CCSV *const csv) {
     return CCSV_ERROR_NONE;
 }
 
-static enum CCSV_Error CCSV_from_string_common(struct CCSV *const csv, const char *const data, const unsigned length, const char separator) {
+static enum CCSV_Error CCSV_from_string_common(struct CCSV *const csv, const char *const data, const int64_t length, const char separator) {
     assert(csv != NULL);
     assert(data != NULL);
     assert(separator != '\0');
+    assert(length > 0);
 
-    csv->data       = data;
-    csv->length     = length;
-    csv->separator  = separator;
+    csv->data          = data;
+    csv->length        = length;
+    csv->separator     = separator;
     csv->current_token = NULL;
     CCSV_Tokens_init(&csv->tokens);
     CCSV_Strings_init(&csv->temp_strings);
@@ -261,12 +269,12 @@ static enum CCSV_Error CCSV_from_string_common(struct CCSV *const csv, const cha
     CCSV_Arena_init(&csv->temp_arenas.chars, CCSV_ARENA_INFINITE_NODES, "CCSV Temporary Chars Arena");
 
     CCSV_Tokens_init(&csv->tokens);
-    if(!CCSV_Tokens_reserve(&csv->tokens, csv->length / 2U)) {
+    if(!CCSV_Tokens_reserve(&csv->tokens, (size_t)csv->length / 2)) {
         return CCSV_ERROR_MEMORY;
     }
 
     struct CCSV_Lexer lexer;
-    CCSV_Lexer_init(&lexer, csv->data, csv->length, csv->separator);
+    CCSV_Lexer_init(&lexer, csv->data, (size_t)csv->length, csv->separator);
 
     enum CCSV_Error error;
     do {
@@ -285,7 +293,281 @@ static enum CCSV_Error CCSV_from_string_common(struct CCSV *const csv, const cha
     return error;
 }
 
-EXTERN_C enum CCSV_Error CCSV_from_string(struct CCSV *const csv, const char *const data, const unsigned length, const char separator) {
+static size_t CCSV_Type_get_size(const enum CCSV_Type type) {
+    switch(type) {
+    case CCSV_TYPE_CHAR:
+    case CCSV_TYPE_UCHAR:
+    case CCSV_TYPE_SCHAR:
+    case CCSV_TYPE_UINT8:
+    case CCSV_TYPE_INT8:
+        return sizeof(char);
+
+    case CCSV_TYPE_SHORT:
+    case CCSV_TYPE_USHORT:
+        return sizeof(short);
+
+    case CCSV_TYPE_INT:
+    case CCSV_TYPE_UINT:
+        return sizeof(int);
+
+    case CCSV_TYPE_LONG:
+    case CCSV_TYPE_ULONG:
+        return sizeof(long);
+
+    case CCSV_TYPE_LLONG:
+    case CCSV_TYPE_ULLONG:
+        return sizeof(long long);
+
+    case CCSV_TYPE_FLOAT:
+        return sizeof(float);
+
+    case CCSV_TYPE_DOUBLE:
+        return sizeof(double);
+
+    case CCSV_TYPE_LDOUBLE:
+        return sizeof(long double);
+
+    case CCSV_TYPE_INT16:
+    case CCSV_TYPE_UINT16:
+        return sizeof(int16_t);
+
+    case CCSV_TYPE_INT32:
+    case CCSV_TYPE_UINT32:
+        return sizeof(int32_t);
+
+    case CCSV_TYPE_INT64:
+    case CCSV_TYPE_UINT64:
+        return sizeof(int64_t);
+
+    case CCSV_TYPE_INTMAX:
+    case CCSV_TYPE_UINTMAX:
+        return sizeof(intmax_t);
+
+    case CCSV_TYPE_SIZE:
+        return sizeof(size_t);
+
+    case CCSV_TYPE_STRING:
+    case CCSV_TYPE_BOOL:
+        assert(false && "this should be unreachable");
+        break;
+    }
+
+    return 0;
+}
+
+static size_t CCSV_get_digit_size(const size_t size) {
+    assert(size == 1 || size == 2 || size == 4 || size == 8 || size == 16);
+    
+    switch(size) {
+    case 1:
+        return 3 + sizeof((char)'-');
+    case 2:
+        return 5 + sizeof((char)'-');
+    case 4:
+        return 10 + sizeof((char)'-');
+    case 8:
+        return 20 + sizeof((char)'-');
+    case 16:
+        return 39 + sizeof((char)'-');
+    }
+    return 0;
+}
+
+static struct CCSV_Sizes CCSV_count_characters(const unsigned char *const read_ptr, const char separator) {
+    assert(read_ptr != NULL);
+    assert(separator != '\0');
+
+    struct CCSV_Sizes sizes = {0, 0};
+
+    char *string, *string_start;
+    memcpy(&string_start, read_ptr, sizeof(string_start));
+    assert(string_start != NULL);
+
+    bool need_escape = false;
+    size_t extra_dblquote = 0;
+    for(string = string_start; *string != '\0'; string++) {
+        if(*string == separator || *string == '\r' || *string == '\n') {
+            need_escape = true;
+        }
+
+        if(*string == '"') {
+            extra_dblquote++;
+        }
+    }
+
+    sizes.raw = (size_t)(string - string_start);
+    if(need_escape || extra_dblquote > 0) {
+        sizes.escaped = sizeof((char)'"') + sizes.raw + extra_dblquote + sizeof((char)'"');
+    }
+
+    return sizes;
+}
+
+static size_t CCSV_write_string(char *write_ptr, const unsigned char *const read_ptr, const bool needs_escape) {
+    assert(write_ptr != NULL);
+    assert(read_ptr != NULL);
+
+    const char *string;
+    memcpy(&string, read_ptr, sizeof(string));
+    assert(string != NULL);
+    if(needs_escape) {
+        const char *const write_ptr_start = write_ptr;
+        *(write_ptr++) = '"';
+        for(;*string != '\0'; string++, write_ptr++) {
+            if(*string == '"') {
+                *(write_ptr++) = '"';
+            }
+            *write_ptr = *string;
+        }
+        *(write_ptr++) = '"';
+        return (size_t)(write_ptr - write_ptr_start);
+    }
+
+    strcpy(write_ptr, string);
+    return strlen(string);
+}
+
+static size_t CCSV_write_number(char *const write_ptr, const unsigned char *const read_ptr, const enum CCSV_Type type) {
+    assert(write_ptr != NULL);
+    assert(read_ptr != NULL);
+    assert(type != CCSV_TYPE_STRING);
+    
+    union CCSV_Value {
+        char               c;
+        unsigned char      uc;
+        signed char        sc;
+        short              s;
+        unsigned short     us;
+        int                i;
+        unsigned           u;
+        long               l;
+        unsigned long      ul;
+        long long          ll;
+        unsigned long long ull;
+        float              f;
+        double             d;
+        long double        ld;
+        int8_t             i8;
+        int8_t             u8;
+        int16_t            i16;
+        uint16_t           u16;
+        int32_t            i32;
+        uint32_t           u32;
+        int64_t            i64;
+        uint64_t           u64;
+        intmax_t           imax;
+        uintmax_t          umax;
+        size_t             size;
+    } value;
+
+    switch(type) {
+    case CCSV_TYPE_CHAR:
+        memcpy(&value.c, read_ptr, sizeof(char));
+        return (size_t)sprintf(write_ptr, "%c", value.c);
+    case CCSV_TYPE_UCHAR:
+        memcpy(&value.uc, read_ptr, sizeof(unsigned char));
+        return (size_t)sprintf(write_ptr, "%u", value.uc);
+    case CCSV_TYPE_SCHAR:
+        memcpy(&value.sc, read_ptr, sizeof(signed char));
+        return (size_t)sprintf(write_ptr, "%i", value.sc);
+    case CCSV_TYPE_SHORT:
+        memcpy(&value.s, read_ptr, sizeof(short));
+        return (size_t)sprintf(write_ptr, "%hi", value.s);
+    case CCSV_TYPE_USHORT:
+        memcpy(&value.us, read_ptr, sizeof(unsigned short));
+        return (size_t)sprintf(write_ptr, "%hu", value.us);
+    case CCSV_TYPE_INT:
+        memcpy(&value.i, read_ptr, sizeof(int));
+        return (size_t)sprintf(write_ptr, "%i", value.i);
+    case CCSV_TYPE_UINT:
+        memcpy(&value.u, read_ptr, sizeof(unsigned));
+        return (size_t)sprintf(write_ptr, "%u", value.u);
+    case CCSV_TYPE_LONG:
+        memcpy(&value.l, read_ptr, sizeof(long));
+        return (size_t)sprintf(write_ptr, "%li", value.l);
+    case CCSV_TYPE_ULONG:
+        memcpy(&value.ul, read_ptr, sizeof(unsigned long));
+        return (size_t)sprintf(write_ptr, "%lu", value.ul);
+    case CCSV_TYPE_LLONG:
+        memcpy(&value.ll, read_ptr, sizeof(long long));
+        return (size_t)sprintf(write_ptr, "%lli", value.ll);
+    case CCSV_TYPE_ULLONG:
+        memcpy(&value.ull, read_ptr, sizeof(unsigned long long));
+        return (size_t)sprintf(write_ptr, "%llu", value.ull);
+    case CCSV_TYPE_FLOAT:
+        memcpy(&value.f, read_ptr, sizeof(float));
+        return (size_t)sprintf(write_ptr, "%f", value.f);
+    case CCSV_TYPE_DOUBLE:
+        memcpy(&value.d, read_ptr, sizeof(double));
+        return (size_t)sprintf(write_ptr, "%lf", value.d);
+    case CCSV_TYPE_LDOUBLE:
+        memcpy(&value.ld, read_ptr, sizeof(long double));
+        return (size_t)sprintf(write_ptr, "%Lf", value.ld);
+    case CCSV_TYPE_INT8:
+        memcpy(&value.i8, read_ptr, sizeof(int8_t));
+        return (size_t)sprintf(write_ptr, "%"PRIi8, value.i8);
+    case CCSV_TYPE_UINT8:
+        memcpy(&value.u8, read_ptr, sizeof(uint8_t));
+        return (size_t)sprintf(write_ptr, "%"PRIu8, value.u8);
+    case CCSV_TYPE_INT16:
+        memcpy(&value.i16, read_ptr, sizeof(int16_t));
+        return (size_t)sprintf(write_ptr, "%"PRIi16, value.i16);
+    case CCSV_TYPE_UINT16:
+        memcpy(&value.u16, read_ptr, sizeof(uint16_t));
+        return (size_t)sprintf(write_ptr, "%"PRIu16, value.u16);
+    case CCSV_TYPE_INT32:
+        memcpy(&value.i32, read_ptr, sizeof(int32_t));
+        return (size_t)sprintf(write_ptr, "%"PRIi32, value.i32);
+    case CCSV_TYPE_UINT32:
+        memcpy(&value.u32, read_ptr, sizeof(uint32_t));
+        return (size_t)sprintf(write_ptr, "%"PRIu32, value.u32);
+    case CCSV_TYPE_INT64:
+        memcpy(&value.i64, read_ptr, sizeof(int64_t));
+        return (size_t)sprintf(write_ptr, "%"PRIi64, value.i64);
+    case CCSV_TYPE_UINT64:
+        memcpy(&value.u64, read_ptr, sizeof(uint64_t));
+        return (size_t)sprintf(write_ptr, "%"PRIu64, value.u64);
+    case CCSV_TYPE_INTMAX:
+        memcpy(&value.imax, read_ptr, sizeof(intmax_t));
+        return (size_t)sprintf(write_ptr, "%ji", value.imax);
+    case CCSV_TYPE_UINTMAX:
+        memcpy(&value.umax, read_ptr, sizeof(uintmax_t));
+        return (size_t)sprintf(write_ptr, "%ju", value.umax);
+    case CCSV_TYPE_SIZE:
+        memcpy(&value.size, read_ptr, sizeof(size_t));
+        return (size_t)sprintf(write_ptr, "%zu", value.size);
+    case CCSV_TYPE_STRING:
+    case CCSV_TYPE_BOOL:
+        assert(false && "this should be unreachable");
+        break;
+    }
+
+    return 0;
+}
+
+static size_t CCSV_write_bool(char *const write_ptr, const unsigned char *const read_ptr) {
+    assert(write_ptr != NULL);
+    assert(read_ptr != NULL);
+
+    bool value;
+    memcpy(&value, read_ptr, sizeof(value));
+    
+    const char *data;
+    size_t length;
+    if(value) {
+        data = "true";
+        length = static_strlen("true");
+    } else {
+        data = "false";
+        length = static_strlen("false");
+    }
+
+    memcpy(write_ptr, data, length);
+
+    return length;
+}
+
+EXTERN_C enum CCSV_Error CCSV_from_string(struct CCSV *const csv, const char *const data, const int64_t length, const char separator) {
     assert(csv != NULL);
     assert(data != NULL);
     assert(separator != '\0');
@@ -319,6 +601,126 @@ EXTERN_C void CCSV_free(struct CCSV *const csv) {
     CCSV_Arena_free(&csv->temp_arenas.strings);
     CCSV_Arena_free(&csv->arenas.chars);
     CCSV_Arena_free(&csv->temp_arenas.chars);
+}
+
+static size_t CCSV_Struct_get_total_size(struct CCSV_Struct structs[], const unsigned struct_count, const char separator) {
+    assert(structs != NULL);
+    assert(struct_count > 0U);
+
+    size_t total_size = 0;
+
+    for(struct CCSV_Struct *structure = structs;
+        structure != structs + struct_count;
+        structure++
+    ) {
+        assert(structure->data != NULL);
+        assert(structure->members != NULL);
+        assert(structure->member_count > 0);
+
+        for(struct CCSV_StructMember *member = structure->members;
+            member != structure->members + structure->member_count;
+            member++
+        ) {
+            member->needs_escape = false;
+
+            switch(member->type) {
+            case CCSV_TYPE_STRING: {
+                const unsigned char *const read_ptr = (const unsigned char*)structure->data + member->offset;
+                const struct CCSV_Sizes sizes = CCSV_count_characters(read_ptr, separator);
+                if(sizes.escaped == 0) {
+                    total_size += sizes.raw + sizeof((char)',');
+                } else {
+                    member->needs_escape = true;
+                    total_size += sizes.escaped + sizeof((char)',');
+                }
+                break;
+            }
+
+            case CCSV_TYPE_BOOL: {
+                const unsigned char *const read_ptr = (const unsigned char*)structure->data + member->offset;
+                bool value;
+                memcpy(&value, read_ptr, sizeof(value));
+                total_size += (value ? static_strlen("true") : static_strlen("false")) + sizeof((char)',');
+                break;
+            }
+
+            default:
+                total_size += CCSV_get_digit_size(CCSV_Type_get_size(member->type)) + sizeof((char)',');
+            }
+        }
+        total_size += sizeof((char)'\n');
+    }
+
+    return total_size;
+}
+
+static char *CCSV_Struct_write_data(struct CCSV_Struct structs[], const unsigned struct_count, char *write_ptr, const char separator) {
+    assert(structs != NULL);
+    assert(struct_count > 0U);
+
+    for(struct CCSV_Struct *structure = structs;
+        structure != structs + struct_count;
+        structure++
+    ) {
+        for(const struct CCSV_StructMember *member = structure->members;
+            member != structure->members + structure->member_count;
+            member++
+        ) {
+            const unsigned char *const read_ptr = (const unsigned char*)structure->data + member->offset;
+
+            switch(member->type) {
+            case CCSV_TYPE_STRING:
+                write_ptr += CCSV_write_string(write_ptr, read_ptr, member->needs_escape);
+                break;
+            case CCSV_TYPE_BOOL:
+                write_ptr += CCSV_write_bool(write_ptr, read_ptr);
+                break;
+            default:
+                write_ptr += CCSV_write_number(write_ptr, read_ptr, member->type);
+            }
+            *(write_ptr++) = separator;
+        }
+        *(write_ptr - 1) = '\n';
+    }
+
+    return write_ptr;
+}
+
+EXTERN_C bool CCSV_to_file(struct CCSV_Struct *const headers, struct CCSV_Struct structs[], const unsigned struct_count, const char *const path, const char separator) {
+    assert(headers != NULL);
+    assert(structs != NULL);
+    assert(path != NULL);
+    assert(separator != '\0');
+
+    const size_t total_size = CCSV_Struct_get_total_size(headers, 1U, separator) + CCSV_Struct_get_total_size(structs, struct_count, separator);
+
+    if(total_size >= (size_t)INT64_MAX) {
+        return false;
+    }
+
+    char *const csv_data = (char*)CCSV_MALLOC((total_size + sizeof((char)'\0')) * sizeof(char));
+    if(csv_data == NULL) {
+        return false;
+    }
+    char *write_ptr = csv_data;
+
+    if(total_size == 0) {
+        *write_ptr = '\0';
+    } else {
+        write_ptr = CCSV_Struct_write_data(headers, 1U, write_ptr, separator);
+        write_ptr = CCSV_Struct_write_data(structs, struct_count, write_ptr, separator);
+        *(write_ptr - 1) = '\0';
+    }
+
+    struct CCSV_FileContents file_contents;
+    file_contents.data = (unsigned char*)csv_data;
+    file_contents.size = (int64_t)(write_ptr - csv_data - 1);
+    
+    const bool success = CCSV_FileContents_put(&file_contents, path) == CCSV_FILECONTENTS_ERROR_NONE;
+
+    CCSV_FREE(csv_data);
+
+    return success;
 }
 
 EXTERN_C enum CCSV_Error CCSV_next_row(struct CCSV *const csv, CCSV_Row *const row) {

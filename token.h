@@ -17,7 +17,7 @@ enum CCSV_Token_Type {
 
 struct CCSV_Token {
     const char           *value;
-    unsigned              length;
+    size_t                length;
     enum CCSV_Token_Type  type;
 };
 

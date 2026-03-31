@@ -10,10 +10,11 @@ extern "C" {
     #include <unistd.h>
 #endif
 
+#include <stdint.h>
+
 enum CCSV_FileContents_Error {
     CCSV_FILECONTENTS_ERROR_NONE,
     CCSV_FILECONTENTS_ERROR_WIN32_API,
-    CCSV_FILECONTENTS_ERROR_TOO_LARGE,
     CCSV_FILECONTENTS_ERROR_MEMORY,
     CCSV_FILECONTENTS_ERROR_FOPEN,
     CCSV_FILECONTENTS_ERROR_FREAD,
@@ -25,13 +26,13 @@ enum CCSV_FileContents_Error {
 
 struct CCSV_FileContents {
     unsigned char *data;
-    unsigned       size;
+    int64_t        size;
 };
 
 void                         CCSV_FileContents_init(struct CCSV_FileContents*);
 void                         CCSV_FileContents_free(struct CCSV_FileContents*);
-enum CCSV_FileContents_Error CCSV_FileContents_get(struct CCSV_FileContents*, const char *path);
-enum CCSV_FileContents_Error CCSV_FileContents_put(const struct CCSV_FileContents*, const char *path);
+enum CCSV_FileContents_Error CCSV_FileContents_get (struct CCSV_FileContents*, const char *path);
+enum CCSV_FileContents_Error CCSV_FileContents_put (const struct CCSV_FileContents*, const char *path);
 
 #endif
 
