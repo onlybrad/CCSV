@@ -448,7 +448,7 @@ static size_t CCSV_write_number(char *const write_ptr, const unsigned char *cons
         double             d;
         long double        ld;
         int8_t             i8;
-        uint8_t             u8;
+        uint8_t            u8;
         int16_t            i16;
         uint16_t           u16;
         int32_t            i32;
@@ -628,10 +628,10 @@ static size_t CCSV_Struct_get_total_size(struct CCSV_Struct structs[], const uns
                 const unsigned char *const read_ptr = (const unsigned char*)structure->data + member->offset;
                 const struct CCSV_Sizes sizes = CCSV_count_characters(read_ptr, separator);
                 if(sizes.escaped == 0) {
-                    total_size += sizes.raw + sizeof((char)',');
+                    total_size += sizes.raw + sizeof(separator);
                 } else {
                     member->needs_escape = true;
-                    total_size += sizes.escaped + sizeof((char)',');
+                    total_size += sizes.escaped + sizeof(separator);
                 }
                 break;
             }
@@ -640,12 +640,12 @@ static size_t CCSV_Struct_get_total_size(struct CCSV_Struct structs[], const uns
                 const unsigned char *const read_ptr = (const unsigned char*)structure->data + member->offset;
                 bool value;
                 memcpy(&value, read_ptr, sizeof(value));
-                total_size += (value ? static_strlen("true") : static_strlen("false")) + sizeof((char)',');
+                total_size += (value ? static_strlen("true") : static_strlen("false")) + sizeof(separator);
                 break;
             }
 
             default:
-                total_size += CCSV_get_digit_size(CCSV_Type_get_size(member->type)) + sizeof((char)',');
+                total_size += CCSV_get_digit_size(CCSV_Type_get_size(member->type)) + sizeof(separator);
             }
         }
         total_size += sizeof((char)'\n');
