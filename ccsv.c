@@ -448,7 +448,7 @@ static size_t CCSV_write_number(char *const write_ptr, const unsigned char *cons
         double             d;
         long double        ld;
         int8_t             i8;
-        int8_t             u8;
+        uint8_t             u8;
         int16_t            i16;
         uint16_t           u16;
         int32_t            i32;
