@@ -563,42 +563,6 @@ static size_t CCSV_write_bool(char *const write_ptr, const unsigned char *const 
     return length;
 }
 
-EXTERN_C enum CCSV_Error CCSV_from_string(struct CCSV *const csv, const char *const data, const int64_t length, const char separator) {
-    assert(csv != NULL);
-    assert(data != NULL);
-    assert(separator != '\0');
-
-    CCSV_FileContents_init(&csv->file_contents);
-    return CCSV_from_string_common(csv, data, length, separator);
-}
-
-EXTERN_C enum CCSV_Error CCSV_from_file(struct CCSV *const csv, const char *const path, const char separator) {
-    assert(csv != NULL);
-    assert(path != NULL);
-    assert(path[0] != '\0');
-    assert(separator != '\0');
-
-    CCSV_FileContents_init(&csv->file_contents);
-    if(CCSV_FileContents_get(&csv->file_contents, path) != CCSV_FILECONTENTS_ERROR_NONE) {
-        return CCSV_ERROR_FILE;
-    }
-
-    const enum CCSV_Error error = CCSV_from_string_common(csv, (const char*)csv->file_contents.data, csv->file_contents.size, separator);
-    
-    return error;
-}
-
-EXTERN_C void CCSV_free(struct CCSV *const csv) {
-    assert(csv != NULL);
-
-    CCSV_FileContents_free(&csv->file_contents);
-    CCSV_Tokens_free(&csv->tokens);
-    CCSV_Arena_free(&csv->arenas.strings);
-    CCSV_Arena_free(&csv->temp_arenas.strings);
-    CCSV_Arena_free(&csv->arenas.chars);
-    CCSV_Arena_free(&csv->temp_arenas.chars);
-}
-
 static size_t CCSV_Struct_overestimate_size(struct CCSV_Structs *const structs, bool *const needs_escape, const char separator) {
     assert(structs != NULL);
     assert(structs->data != NULL);
@@ -673,6 +637,42 @@ static char *CCSV_Struct_write_data(struct CCSV_Structs *const structs, char *wr
     return write_ptr;
 }
 
+EXTERN_C enum CCSV_Error CCSV_from_string(struct CCSV *const csv, const char *const data, const int64_t length, const char separator) {
+    assert(csv != NULL);
+    assert(data != NULL);
+    assert(separator != '\0');
+
+    CCSV_FileContents_init(&csv->file_contents);
+    return CCSV_from_string_common(csv, data, length, separator);
+}
+
+EXTERN_C enum CCSV_Error CCSV_from_file(struct CCSV *const csv, const char *const path, const char separator) {
+    assert(csv != NULL);
+    assert(path != NULL);
+    assert(path[0] != '\0');
+    assert(separator != '\0');
+
+    CCSV_FileContents_init(&csv->file_contents);
+    if(CCSV_FileContents_get(&csv->file_contents, path) != CCSV_FILECONTENTS_ERROR_NONE) {
+        return CCSV_ERROR_FILE;
+    }
+
+    const enum CCSV_Error error = CCSV_from_string_common(csv, (const char*)csv->file_contents.data, csv->file_contents.size, separator);
+    
+    return error;
+}
+
+EXTERN_C void CCSV_free(struct CCSV *const csv) {
+    assert(csv != NULL);
+
+    CCSV_FileContents_free(&csv->file_contents);
+    CCSV_Tokens_free(&csv->tokens);
+    CCSV_Arena_free(&csv->arenas.strings);
+    CCSV_Arena_free(&csv->temp_arenas.strings);
+    CCSV_Arena_free(&csv->arenas.chars);
+    CCSV_Arena_free(&csv->temp_arenas.chars);
+}
+
 EXTERN_C bool CCSV_to_file(struct CCSV_Structs *const headers, struct CCSV_Structs *const structs, const char *const path, const char separator) {
     assert(headers != NULL);
     assert(structs != NULL);
@@ -704,21 +704,21 @@ EXTERN_C bool CCSV_to_file(struct CCSV_Structs *const headers, struct CCSV_Struc
     bool *const headers_needs_escape = needs_escape,
          *const structs_needs_escape = needs_escape + headers_bools_required;
 
-    const size_t total_size = CCSV_Struct_overestimate_size(headers, headers_needs_escape, separator) + CCSV_Struct_overestimate_size(structs, structs_needs_escape, separator);
+    const size_t buffer_size = CCSV_Struct_overestimate_size(headers, headers_needs_escape, separator) + CCSV_Struct_overestimate_size(structs, structs_needs_escape, separator);
 
-    if(total_size >= (size_t)INT64_MAX) {
+    if ((uintmax_t)buffer_size >= MIN((uintmax_t)INT64_MAX, (uintmax_t)SIZE_MAX) - 1) {
         CCSV_FREE(needs_escape);
         return false;
     }
 
-    char *const csv_data = (char*)CCSV_MALLOC((total_size + sizeof((char)'\0')) * sizeof(char));
+    char *const csv_data = (char*)CCSV_MALLOC((buffer_size + sizeof((char)'\0')) * sizeof(char));
     if(csv_data == NULL) {
         CCSV_FREE(needs_escape);
         return false;
     }
     char *write_ptr = csv_data;
 
-    if(total_size == 0) {
+    if(buffer_size == 0) {
         *write_ptr = '\0';
     } else {
         write_ptr = CCSV_Struct_write_data(headers, write_ptr, headers_needs_escape, separator);
