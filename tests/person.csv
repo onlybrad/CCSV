@@ -1,0 +1,5 @@
+name,age,money,"""is noob"""
+Person1,10,-50,true
+Person2,10,-10,false
+Person3,10,50,true
+Person4,10,100,false

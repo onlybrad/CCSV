@@ -32,7 +32,7 @@ static void test_CCSV_to_file(void) {
     };
 
     const char *headers_data[] = {
-        "name", "age", "money", "is noob" 
+        "name", "age", "money", "\"is noob\"" 
     };
 
     struct Row rows_data[] = {
@@ -43,30 +43,35 @@ static void test_CCSV_to_file(void) {
     };
 
     struct CCSV_StructMember headers_members[] = {
-        {CCSV_TYPE_STRING, sizeof(const char*) * 0, false},
-        {CCSV_TYPE_STRING, sizeof(const char*) * 1, false},
-        {CCSV_TYPE_STRING, sizeof(const char*) * 2, false},
-        {CCSV_TYPE_STRING, sizeof(const char*) * 3, false},
+        {CCSV_TYPE_STRING, sizeof(const char*) * 0},
+        {CCSV_TYPE_STRING, sizeof(const char*) * 1},
+        {CCSV_TYPE_STRING, sizeof(const char*) * 2},
+        {CCSV_TYPE_STRING, sizeof(const char*) * 3},
     };
 
     struct CCSV_StructMember rows_members[] = {
-        {CCSV_TYPE_STRING, CCSV_OFFSETOF(struct Row, name), false},
-        {CCSV_TYPE_UINT,   CCSV_OFFSETOF(struct Row, age), false},
-        {CCSV_TYPE_INT32,  CCSV_OFFSETOF(struct Row, money), false},
-        {CCSV_TYPE_BOOL,   CCSV_OFFSETOF(struct Row, is_noob), false},
+        {CCSV_TYPE_STRING, CCSV_OFFSETOF(struct Row, name)},
+        {CCSV_TYPE_UINT,   CCSV_OFFSETOF(struct Row, age)},
+        {CCSV_TYPE_INT32,  CCSV_OFFSETOF(struct Row, money)},
+        {CCSV_TYPE_BOOL,   CCSV_OFFSETOF(struct Row, is_noob)},
     };
 
-    struct CCSV_Struct headers = {headers_data, headers_members, (unsigned)ARRAY_LENGTH(headers_members)};
-    struct CCSV_Struct rows[] = {
-        {rows_data + 0, rows_members, (unsigned)ARRAY_LENGTH(rows_members)},
-        {rows_data + 1, rows_members, (unsigned)ARRAY_LENGTH(rows_members)},
-        {rows_data + 2, rows_members, (unsigned)ARRAY_LENGTH(rows_members)},
-        {rows_data + 3, rows_members, (unsigned)ARRAY_LENGTH(rows_members)},
-    };
-
+    struct CCSV_Structs headers;
+    headers.data         = headers_data;
+    headers.members      = headers_members;
+    headers.member_count = (unsigned)ARRAY_LENGTH(headers_members);
+    headers.count        = 1; //the whole array counts as 1 "struct"
+    headers.size         = sizeof(headers_data); //the size of "struct" is the whole array
+    
+    struct CCSV_Structs rows;
+    rows.data         = rows_data;
+    rows.members      = rows_members;
+    rows.member_count = (unsigned)ARRAY_LENGTH(rows_members);
+    rows.count        = ARRAY_LENGTH(rows_data);
+    rows.size         = sizeof(struct Row);
 
     const char *const path = "./tests/person.csv";
-    if(!CCSV_to_file(&headers, rows, (unsigned)ARRAY_LENGTH(rows), path, ',')) {
+    if(!CCSV_to_file(&headers, &rows, path, ',')) {
         exit(EXIT_FAILURE);
     }
 

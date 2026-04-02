@@ -70,20 +70,21 @@ enum CCSV_Type {
 struct CCSV_StructMember {
     enum CCSV_Type type;
     size_t         offset;
-    bool           needs_escape;
 };
 
-struct CCSV_Struct {
-    const void               *data;
-    struct CCSV_StructMember *members;
-    unsigned                  member_count;
+struct CCSV_Structs {
+    const void                     *data;
+    const struct CCSV_StructMember *members;
+    unsigned                        member_count;
+    size_t                          size;
+    size_t                          count;
 };
 
 enum CCSV_Error CCSV_from_string(struct CCSV*, const char *data, int64_t length, char separator);
 enum CCSV_Error CCSV_from_file  (struct CCSV*, const char *path, char separator);
 enum CCSV_Error CCSV_next_row   (struct CCSV*, CCSV_Row*);
 void            CCSV_free       (struct CCSV*);
-bool            CCSV_to_file    (struct CCSV_Struct *headers, struct CCSV_Struct structs[], unsigned struct_count, const char *path, const char separator);
+bool            CCSV_to_file    (struct CCSV_Structs *headers, struct CCSV_Structs *structs, const char *path, const char separator);
 
 
 #endif
