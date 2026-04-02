@@ -226,7 +226,7 @@ EXTERN_C void *CCSV_Arena_alloc(struct CCSV_Arena *const arena, const size_t siz
 
     const uintptr_t start_address = (uintptr_t)(CCSV_GET_DATA(arena->current) + arena->current->offset);
     uintptr_t aligned_address     = (start_address + ((uintptr_t)alignment - 1U)) & ~((uintptr_t)alignment - 1U);
-    size_t padding              = (size_t)(aligned_address - start_address);
+    size_t padding                = (size_t)(aligned_address - start_address);
 
     if(arena->current->offset + padding + size > arena->current->size) {
         if(!CCSV_Arena_create_next_node(arena, size)) {
@@ -254,9 +254,9 @@ bool CCSV_Arena_reserve(struct CCSV_Arena *const arena, const size_t size, size_
         return NULL;
     }
 
-    const uintptr_t start_address = (uintptr_t)(CCSV_GET_DATA(arena->current) + arena->current->offset);
-    uintptr_t aligned_address     = (start_address + ((uintptr_t)alignment - 1U)) & ~((uintptr_t)alignment - 1U);
-    size_t padding              = (size_t)(aligned_address - start_address);
+    const uintptr_t start_address   = (uintptr_t)(CCSV_GET_DATA(arena->current) + arena->current->offset);
+    const uintptr_t aligned_address = (start_address + ((uintptr_t)alignment - 1U)) & ~((uintptr_t)alignment - 1U);
+    const size_t padding            = (size_t)(aligned_address - start_address);
 
     if(arena->current->offset + padding + size <= arena->current->size) {
         return true;
