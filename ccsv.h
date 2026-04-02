@@ -84,8 +84,7 @@ enum CCSV_Error CCSV_from_string(struct CCSV*, const char *data, int64_t length,
 enum CCSV_Error CCSV_from_file  (struct CCSV*, const char *path, char separator);
 enum CCSV_Error CCSV_next_row   (struct CCSV*, CCSV_Row*);
 void            CCSV_free       (struct CCSV*);
-bool            CCSV_to_file    (struct CCSV_Structs *headers, struct CCSV_Structs *structs, const char *path, const char separator);
-
+bool            CCSV_to_file    (const struct CCSV_Structs *headers, const struct CCSV_Structs *structs, const char *path, const char separator);
 
 #endif
 

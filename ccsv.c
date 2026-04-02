@@ -563,7 +563,7 @@ static size_t CCSV_write_bool(char *const write_ptr, const unsigned char *const 
     return length;
 }
 
-static size_t CCSV_Struct_overestimate_size(struct CCSV_Structs *const structs, bool *needs_escape, const char separator) {
+static size_t CCSV_Struct_overestimate_size(const struct CCSV_Structs *const structs, bool *needs_escape, const char separator) {
     assert(structs != NULL);
     assert(structs->data != NULL);
     assert(structs->members != NULL);
@@ -599,7 +599,7 @@ static size_t CCSV_Struct_overestimate_size(struct CCSV_Structs *const structs, 
     return total_size;
 }
 
-static char *CCSV_Struct_write_data(struct CCSV_Structs *const structs, char *write_ptr, bool *needs_escape, const char separator) {
+static char *CCSV_Struct_write_data(const struct CCSV_Structs *const structs, char *write_ptr, bool *needs_escape, const char separator) {
     assert(structs != NULL);
     assert(structs->data != NULL);
     assert(structs->members != NULL);
@@ -670,7 +670,7 @@ EXTERN_C void CCSV_free(struct CCSV *const csv) {
     CCSV_Arena_free(&csv->temp_arenas.chars);
 }
 
-EXTERN_C bool CCSV_to_file(struct CCSV_Structs *const headers, struct CCSV_Structs *const structs, const char *const path, const char separator) {
+EXTERN_C bool CCSV_to_file(const struct CCSV_Structs *const headers, const struct CCSV_Structs *const structs, const char *const path, const char separator) {
     assert(headers != NULL);
     assert(structs != NULL);
     assert(path != NULL);
