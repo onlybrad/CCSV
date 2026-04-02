@@ -728,7 +728,12 @@ EXTERN_C bool CCSV_to_file(struct CCSV_Structs *const headers, struct CCSV_Struc
 
     struct CCSV_FileContents file_contents;
     file_contents.data = (unsigned char*)csv_data;
-    file_contents.size = (int64_t)(write_ptr - csv_data - 1);
+
+    if(buffer_size == 0) {
+        file_contents.size = 0;
+    } else {
+        file_contents.size = (int64_t)(write_ptr - csv_data - 1);
+    }
     
     success = CCSV_FileContents_put(&file_contents, path) == CCSV_FILECONTENTS_ERROR_NONE;
 
