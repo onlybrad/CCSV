@@ -563,7 +563,7 @@ static size_t CCSV_write_bool(char *const write_ptr, const unsigned char *const 
     return length;
 }
 
-static size_t CCSV_Struct_overestimate_size(struct CCSV_Structs *const structs, bool *const needs_escape, const char separator) {
+static size_t CCSV_Struct_overestimate_size(struct CCSV_Structs *const structs, bool *needs_escape, const char separator) {
     assert(structs != NULL);
     assert(structs->data != NULL);
     assert(structs->members != NULL);
@@ -571,18 +571,17 @@ static size_t CCSV_Struct_overestimate_size(struct CCSV_Structs *const structs, 
     assert(needs_escape != NULL);
     assert(separator != '\0');
 
-    bool *needs_escape_ptr = needs_escape;
     size_t total_size = 0;
     const unsigned char *struct_ptr = (const unsigned char*)structs->data;
 
     for(size_t i = 0; i < structs->count; i++, struct_ptr += structs->size) {
         for(const struct CCSV_StructMember *member = structs->members;
             member != structs->members + structs->member_count;
-            member++, needs_escape_ptr++
+            member++, needs_escape++
         ) {
             switch(member->type) {
             case CCSV_TYPE_STRING:
-                total_size += CCSV_count_characters(struct_ptr + member->offset, needs_escape_ptr, separator);
+                total_size += CCSV_count_characters(struct_ptr + member->offset, needs_escape, separator);
                 break;
             
             case CCSV_TYPE_BOOL:
@@ -600,7 +599,7 @@ static size_t CCSV_Struct_overestimate_size(struct CCSV_Structs *const structs, 
     return total_size;
 }
 
-static char *CCSV_Struct_write_data(struct CCSV_Structs *const structs, char *write_ptr, bool *const needs_escape, const char separator) {
+static char *CCSV_Struct_write_data(struct CCSV_Structs *const structs, char *write_ptr, bool *needs_escape, const char separator) {
     assert(structs != NULL);
     assert(structs->data != NULL);
     assert(structs->members != NULL);
@@ -609,17 +608,15 @@ static char *CCSV_Struct_write_data(struct CCSV_Structs *const structs, char *wr
     assert(separator != '\0');
 
     const unsigned char *struct_ptr = (const unsigned char*)structs->data;
-    bool *needs_escape_ptr = needs_escape;
-
     for(size_t i = 0; i < structs->count; i++, struct_ptr += structs->size) {
         for(const struct CCSV_StructMember *member = structs->members;
             member != structs->members + structs->member_count;
-            member++, needs_escape_ptr++
+            member++, needs_escape++
         ) {
             const unsigned char *const member_ptr = struct_ptr + member->offset;
             switch(member->type) {
             case CCSV_TYPE_STRING:
-                write_ptr += CCSV_write_string(write_ptr, member_ptr, *needs_escape_ptr);
+                write_ptr += CCSV_write_string(write_ptr, member_ptr, *needs_escape);
                 break;
 
             case CCSV_TYPE_BOOL:
