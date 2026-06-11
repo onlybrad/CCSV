@@ -2,23 +2,23 @@
 extern "C" {
 #endif
 
-#ifndef CCSV_TOKEN_H
-#define CCSV_TOKEN_H
+#ifndef OB_CSV_TOKEN_H
+#define OB_CSV_TOKEN_H
 
 #include <stdio.h>
 
-enum CCSV_Token_Type {
-    CCSV_TOKEN_STRING,
-    CCSV_TOKEN_SEPARATOR,
-    CCSV_TOKEN_DBLQUOTE,
-    CCSV_TOKEN_NEWLINE,
-    CCSV_TOKEN_CARRIAGE
+enum OB_CSV_Token_Type {
+    OB_CSV_TOKEN_STRING,
+    OB_CSV_TOKEN_SEPARATOR,
+    OB_CSV_TOKEN_DBLQUOTE,
+    OB_CSV_TOKEN_NEWLINE,
+    OB_CSV_TOKEN_CARRIAGE
 };
 
-struct CCSV_Token {
+struct OB_CSV_Token {
     const char           *value;
     size_t                length;
-    enum CCSV_Token_Type  type;
+    enum OB_CSV_Token_Type  type;
 };
 
 #endif

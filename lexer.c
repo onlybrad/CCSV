@@ -6,7 +6,7 @@
 #include "token.h"
 #include "util.h"
 
-static size_t CCSV_Lexer_read_string(const struct CCSV_Lexer *const lexer) {
+static size_t OB_CSV_Lexer_read_string(const struct OB_CSV_Lexer *const lexer) {
     assert(lexer != NULL);
 
     const size_t position = lexer->position; 
@@ -23,7 +23,7 @@ static size_t CCSV_Lexer_read_string(const struct CCSV_Lexer *const lexer) {
     return i;
 }
 
-EXTERN_C void CCSV_Lexer_init(struct CCSV_Lexer *const lexer, const char *const data, const size_t length, const char separator) {
+EXTERN_C void OB_CSV_Lexer_init(struct OB_CSV_Lexer *const lexer, const char *const data, const size_t length, const char separator) {
     assert(lexer != NULL);
     assert(data != NULL);
     assert(length > 0U);
@@ -35,7 +35,7 @@ EXTERN_C void CCSV_Lexer_init(struct CCSV_Lexer *const lexer, const char *const 
     lexer->separator = separator;
 }
 
-EXTERN_C bool CCSV_Lexer_tokenize(struct CCSV_Lexer *const lexer, struct CCSV_Tokens *const tokens, struct CCSV_Counters *const counters) {
+EXTERN_C bool OB_CSV_Lexer_tokenize(struct OB_CSV_Lexer *const lexer, struct OB_CSV_Tokens *const tokens, struct OB_CSV_Counters *const counters) {
     assert(lexer != NULL);
     assert(tokens != NULL);
     assert(counters != NULL);
@@ -43,7 +43,7 @@ EXTERN_C bool CCSV_Lexer_tokenize(struct CCSV_Lexer *const lexer, struct CCSV_To
     size_t current_column_count = 0;
 
     while(lexer->position < lexer->length) {
-        struct CCSV_Token *token = CCSV_Tokens_next(tokens);
+        struct OB_CSV_Token *token = OB_CSV_Tokens_next(tokens);
         if(token == NULL) {
             return false;
         }
@@ -51,19 +51,19 @@ EXTERN_C bool CCSV_Lexer_tokenize(struct CCSV_Lexer *const lexer, struct CCSV_To
         token->value = lexer->data + lexer->position;
         if(*token->value == lexer->separator) {
             token->length    = 1U;
-            token->type      = CCSV_TOKEN_SEPARATOR;
+            token->type      = OB_CSV_TOKEN_SEPARATOR;
             counters->chars += sizeof(lexer->separator);
             current_column_count++;
         } else switch(*token->value) {
         case '"':
             token->length    = 1U;
-            token->type      = CCSV_TOKEN_DBLQUOTE;
+            token->type      = OB_CSV_TOKEN_DBLQUOTE;
             counters->chars += sizeof((char)'"');
             break;
 
         case '\r':
             token->length         = 1U;
-            token->type           = CCSV_TOKEN_CARRIAGE;
+            token->type           = OB_CSV_TOKEN_CARRIAGE;
             counters->chars      += sizeof((char)'\r');
             counters->max_columns = MAX(counters->max_columns, current_column_count);
             current_column_count  = 0U;
@@ -71,15 +71,15 @@ EXTERN_C bool CCSV_Lexer_tokenize(struct CCSV_Lexer *const lexer, struct CCSV_To
 
         case '\n':
             token->length         = 1U;
-            token->type           = CCSV_TOKEN_NEWLINE;
+            token->type           = OB_CSV_TOKEN_NEWLINE;
             counters->chars      += sizeof((char)'\n');
             counters->max_columns = MAX(counters->max_columns, current_column_count);
             current_column_count  = 0U;
             break;
 
         default:
-            token->length    = CCSV_Lexer_read_string(lexer);
-            token->type      = CCSV_TOKEN_STRING;
+            token->length    = OB_CSV_Lexer_read_string(lexer);
+            token->type      = OB_CSV_TOKEN_STRING;
             counters->chars += token->length + sizeof((char)'\0');
             counters->strings++;
         }

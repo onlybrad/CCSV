@@ -2,14 +2,14 @@
 extern "C" {
 #endif
 
-#ifndef CCSV_ARENAS_H
-#define CCSV_ARENAS_H
+#ifndef OB_CSV_ARENAS_H
+#define OB_CSV_ARENAS_H
 
 #include "allocator.h"
 
-struct CCSV_Arenas {
-    struct CCSV_Arena strings;
-    struct CCSV_Arena chars;
+struct OB_CSV_Arenas {
+    struct OB_CSV_Arena strings;
+    struct OB_CSV_Arena chars;
 };
 
 #endif

@@ -6,13 +6,13 @@
 #include "allocator.h"
 #include "util.h"
 
-#define CCSV_GET_DATA(NODE) ((unsigned char *)((NODE) + 1))
+#define OB_CSV_GET_DATA(NODE) ((unsigned char *)((NODE) + 1))
 
 #ifndef NDEBUG
 
-static struct CCSV_AllocationStats allocation_stats;
+static struct OB_CSV_AllocationStats allocation_stats;
 
-void *CCSV_debug_malloc(const size_t size) {
+void *OB_CSV_debug_malloc(const size_t size) {
     void *const ret = malloc(size);
     if(ret != NULL) {
         allocation_stats.allocated++;
@@ -21,7 +21,7 @@ void *CCSV_debug_malloc(const size_t size) {
     return ret;
 }
 
-void *CCSV_debug_calloc(const size_t count, const size_t size) {
+void *OB_CSV_debug_calloc(const size_t count, const size_t size) {
     void *const ret = calloc(count, size);
     if(ret != NULL) {
         allocation_stats.allocated++;
@@ -30,7 +30,7 @@ void *CCSV_debug_calloc(const size_t count, const size_t size) {
     return ret;
 }
 
-void *CCSV_debug_realloc(void *const ptr, const size_t size) {
+void *OB_CSV_debug_realloc(void *const ptr, const size_t size) {
     void *const ret = realloc(ptr, size);
 
     if(ret != NULL) {
@@ -43,24 +43,24 @@ void *CCSV_debug_realloc(void *const ptr, const size_t size) {
     return ret;
 }
 
-char *CCSV_debug_strdup(const char *const str) {
+char *OB_CSV_debug_strdup(const char *const str) {
 #if defined(__MINGW32__) || !defined(_WIN32)
-    #define CCSV_STRDUP_FUNC strdup
+    #define OB_CSV_STRDUP_FUNC strdup
 #else
-    #define CCSV_STRDUP_FUNC _strdup
+    #define OB_CSV_STRDUP_FUNC _strdup
 #endif
 
-    char *const ret = CCSV_STRDUP_FUNC(str);
+    char *const ret = OB_CSV_STRDUP_FUNC(str);
     if(ret != NULL) {
         allocation_stats.allocated++;
     }
 
     return ret;
 
-#undef CCSV_STRDUP_FUNC
+#undef OB_CSV_STRDUP_FUNC
 }
 
-void CCSV_debug_free(void *ptr) {
+void OB_CSV_debug_free(void *ptr) {
     if(ptr == NULL) {
         return;
     }
@@ -69,16 +69,16 @@ void CCSV_debug_free(void *ptr) {
     allocation_stats.deallocated++;
 }
 
-const struct CCSV_AllocationStats *CCSV_get_allocation_stats(void) {
+const struct OB_CSV_AllocationStats *OB_CSV_get_allocation_stats(void) {
     return &allocation_stats;
 }
 
 #endif
 
-static struct CCSV_ArenaNode *CCSV_ArenaNode_new(const size_t size) {
+static struct OB_CSV_ArenaNode *OB_CSV_ArenaNode_new(const size_t size) {
     assert(size > 0);
 
-    struct CCSV_ArenaNode *const node = (struct CCSV_ArenaNode *)CCSV_CALLOC(sizeof(*node) + size, sizeof(unsigned char));
+    struct OB_CSV_ArenaNode *const node = (struct OB_CSV_ArenaNode *)OB_CSV_CALLOC(sizeof(*node) + size, sizeof(unsigned char));
     if(node == NULL) {
         return NULL;
     }
@@ -90,7 +90,7 @@ static struct CCSV_ArenaNode *CCSV_ArenaNode_new(const size_t size) {
     return node;
 }
 
-static bool CCSV_Arena_create_next_node(struct CCSV_Arena *const arena, const size_t size) {
+static bool OB_CSV_Arena_create_next_node(struct OB_CSV_Arena *const arena, const size_t size) {
     assert(arena != NULL);
     assert(size > 0);
 
@@ -103,14 +103,14 @@ static bool CCSV_Arena_create_next_node(struct CCSV_Arena *const arena, const si
         } while(node_size < size);
     }
 
-    struct CCSV_ArenaNode *const current = arena->current;
-    struct CCSV_ArenaNode *const next    = current->next;
+    struct OB_CSV_ArenaNode *const current = arena->current;
+    struct OB_CSV_ArenaNode *const next    = current->next;
     if(next == NULL) {
         if(arena->node_count == arena->node_max) {
             return false;
         }
 
-        if((current->next = CCSV_ArenaNode_new(node_size)) != NULL) {
+        if((current->next = OB_CSV_ArenaNode_new(node_size)) != NULL) {
             arena->current = current->next;
             arena->node_count++;
             return true;
@@ -120,10 +120,10 @@ static bool CCSV_Arena_create_next_node(struct CCSV_Arena *const arena, const si
     }
 
     if(next->size < size) {
-        struct CCSV_ArenaNode *const next_next = next->next;
-        CCSV_FREE(next);
+        struct OB_CSV_ArenaNode *const next_next = next->next;
+        OB_CSV_FREE(next);
 
-        if((current->next = CCSV_ArenaNode_new(node_size)) != NULL) {
+        if((current->next = OB_CSV_ArenaNode_new(node_size)) != NULL) {
             current->next->next = next_next;
             arena->current      = current->next;
             return true;
@@ -137,7 +137,7 @@ static bool CCSV_Arena_create_next_node(struct CCSV_Arena *const arena, const si
     return true;
 }
 
-EXTERN_C void CCSV_Arena_init(struct CCSV_Arena *const arena, const size_t node_max, const char *const name) {
+EXTERN_C void OB_CSV_Arena_init(struct OB_CSV_Arena *const arena, const size_t node_max, const char *const name) {
     assert(arena != NULL);
 
     arena->node_count = 0U;
@@ -153,7 +153,7 @@ EXTERN_C void CCSV_Arena_init(struct CCSV_Arena *const arena, const size_t node_
 
 }
 
-EXTERN_C bool CCSV_Arena_create_node(struct CCSV_Arena *const arena, size_t size) {
+EXTERN_C bool OB_CSV_Arena_create_node(struct OB_CSV_Arena *const arena, size_t size) {
     assert(arena != NULL);
     assert(size > 0U);
 
@@ -161,11 +161,11 @@ EXTERN_C bool CCSV_Arena_create_node(struct CCSV_Arena *const arena, size_t size
         return true;
     }
 
-    if(size < CCSV_ARENA_MINIMUM_SIZE) {
-        size = CCSV_ARENA_MINIMUM_SIZE;
+    if(size < OB_CSV_ARENA_MINIMUM_SIZE) {
+        size = OB_CSV_ARENA_MINIMUM_SIZE;
     }
 
-    arena->current = arena->head = CCSV_ArenaNode_new(size);
+    arena->current = arena->head = OB_CSV_ArenaNode_new(size);
 
     if(arena->head != NULL) {
         arena->node_count = 1U;
@@ -174,66 +174,66 @@ EXTERN_C bool CCSV_Arena_create_node(struct CCSV_Arena *const arena, size_t size
     return arena->head != NULL;
 }
 
-EXTERN_C void CCSV_Arena_free(struct CCSV_Arena *const arena) {
+EXTERN_C void OB_CSV_Arena_free(struct OB_CSV_Arena *const arena) {
     assert(arena != NULL);
     
-    struct CCSV_ArenaNode *current = arena->head;
+    struct OB_CSV_ArenaNode *current = arena->head;
     arena->head = NULL;
     while(current != NULL) {
-        struct CCSV_ArenaNode *const next = current->next;
-        CCSV_FREE(current);
+        struct OB_CSV_ArenaNode *const next = current->next;
+        OB_CSV_FREE(current);
         current = next;
     }
 
 #ifndef NDEBUG
-    CCSV_Arena_init(arena, arena->node_max, arena->name);
+    OB_CSV_Arena_init(arena, arena->node_max, arena->name);
 #else
-    CCSV_Arena_init(arena, arena->node_max, NULL);
+    OB_CSV_Arena_init(arena, arena->node_max, NULL);
 #endif
 }
 
-EXTERN_C void CCSV_Arena_reset(struct CCSV_Arena *const arena) {
+EXTERN_C void OB_CSV_Arena_reset(struct OB_CSV_Arena *const arena) {
     assert(arena != NULL);
     
     arena->current      = arena->head;
     arena->head->offset = 0U;
 }
 
-EXTERN_C void *CCSV_Arena_alloc_objects(struct CCSV_Arena *const arena, const size_t count, const size_t size, const size_t alignment) {
+EXTERN_C void *OB_CSV_Arena_alloc_objects(struct OB_CSV_Arena *const arena, const size_t count, const size_t size, const size_t alignment) {
     assert(arena != NULL);
     assert(count > 0U);
     assert(size > 0U);
     assert((alignment & (alignment - 1U)) == 0U);
 
     bool success;
-    const size_t total_size = CCSV_safe_mult(count, size, &success);
+    const size_t total_size = OB_CSV_safe_mult(count, size, &success);
     
-    return success ? CCSV_Arena_alloc(arena, total_size, alignment) : NULL;
+    return success ? OB_CSV_Arena_alloc(arena, total_size, alignment) : NULL;
 }
 
-EXTERN_C void *CCSV_Arena_alloc(struct CCSV_Arena *const arena, const size_t size, size_t alignment) {
+EXTERN_C void *OB_CSV_Arena_alloc(struct OB_CSV_Arena *const arena, const size_t size, size_t alignment) {
     assert(arena != NULL);
     assert(size > 0U);
     assert((alignment & (alignment - 1U)) == 0U);
 
     if(alignment == 0) {
-        alignment = CCSV_ALIGNOF(uintmax_t);
+        alignment = OB_CSV_ALIGNOF(uintmax_t);
     }
 
-    if(!CCSV_Arena_create_node(arena, size)) {
+    if(!OB_CSV_Arena_create_node(arena, size)) {
         return NULL;
     }
 
-    const uintptr_t start_address = (uintptr_t)(CCSV_GET_DATA(arena->current) + arena->current->offset);
+    const uintptr_t start_address = (uintptr_t)(OB_CSV_GET_DATA(arena->current) + arena->current->offset);
     uintptr_t aligned_address     = (start_address + ((uintptr_t)alignment - 1U)) & ~((uintptr_t)alignment - 1U);
     size_t padding                = (size_t)(aligned_address - start_address);
 
     if(arena->current->offset + padding + size > arena->current->size) {
-        if(!CCSV_Arena_create_next_node(arena, size)) {
+        if(!OB_CSV_Arena_create_next_node(arena, size)) {
             return NULL;
         }
 
-        aligned_address = (uintptr_t)(CCSV_GET_DATA(arena->current));
+        aligned_address = (uintptr_t)(OB_CSV_GET_DATA(arena->current));
         padding         = 0U;
     }
 
@@ -241,20 +241,20 @@ EXTERN_C void *CCSV_Arena_alloc(struct CCSV_Arena *const arena, const size_t siz
     return (void*)aligned_address;
 }
 
-bool CCSV_Arena_reserve(struct CCSV_Arena *const arena, const size_t size, size_t alignment) {
+bool OB_CSV_Arena_reserve(struct OB_CSV_Arena *const arena, const size_t size, size_t alignment) {
     assert(arena != NULL);
     assert(size > 0U);
     assert((alignment & (alignment - 1U)) == 0U);
 
     if(alignment == 0) {
-        alignment = CCSV_ALIGNOF(uintmax_t);
+        alignment = OB_CSV_ALIGNOF(uintmax_t);
     }
 
-    if(!CCSV_Arena_create_node(arena, size)) {
+    if(!OB_CSV_Arena_create_node(arena, size)) {
         return NULL;
     }
 
-    const uintptr_t start_address   = (uintptr_t)(CCSV_GET_DATA(arena->current) + arena->current->offset);
+    const uintptr_t start_address   = (uintptr_t)(OB_CSV_GET_DATA(arena->current) + arena->current->offset);
     const uintptr_t aligned_address = (start_address + ((uintptr_t)alignment - 1U)) & ~((uintptr_t)alignment - 1U);
     const size_t padding            = (size_t)(aligned_address - start_address);
 
@@ -262,16 +262,16 @@ bool CCSV_Arena_reserve(struct CCSV_Arena *const arena, const size_t size, size_
         return true;
     }
 
-    return CCSV_Arena_create_next_node(arena, size);
+    return OB_CSV_Arena_create_next_node(arena, size);
 }
 
 
-EXTERN_C char *CCSV_Arena_strdup(struct CCSV_Arena *const arena, const char *const str, size_t *const length) {
+EXTERN_C char *OB_CSV_Arena_strdup(struct OB_CSV_Arena *const arena, const char *const str, size_t *const length) {
     assert(arena != NULL);
     assert(str != NULL);
 
     const size_t len = strlen(str);
-    char *const copy = CCSV_ARENA_ALLOC(arena, len + 1U, char);
+    char *const copy = OB_CSV_ARENA_ALLOC(arena, len + 1U, char);
     if(copy == NULL) {
         return NULL;
     }

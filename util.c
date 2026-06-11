@@ -14,7 +14,7 @@
 
 #include "allocator.h"
 
-EXTERN_C void CCSV_print_bytes(const void *const buffer, const size_t size) {
+EXTERN_C void OB_CSV_print_bytes(const void *const buffer, const size_t size) {
     assert(buffer != NULL);
     assert(size > 0);
 
@@ -25,7 +25,7 @@ EXTERN_C void CCSV_print_bytes(const void *const buffer, const size_t size) {
     printf("0x%02hhx]\n", ((const unsigned char*)buffer)[size - 1]);
 }
 
-EXTERN_C uint64_t CCSV_usec_timestamp(void) {
+EXTERN_C uint64_t OB_CSV_usec_timestamp(void) {
 #if defined(__MINGW32__) || !defined(_WIN32)
     struct timeval current_time;
     gettimeofday(&current_time, NULL);
@@ -42,7 +42,7 @@ EXTERN_C uint64_t CCSV_usec_timestamp(void) {
 #endif
 }
 
-EXTERN_C size_t CCSV_safe_mult(const size_t a, const size_t b, bool *const success) {
+EXTERN_C size_t OB_CSV_safe_mult(const size_t a, const size_t b, bool *const success) {
     assert(success != NULL);
 
     if(b == 0U) {

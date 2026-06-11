@@ -2,8 +2,8 @@
 extern "C" {
 #endif
 
-#ifndef CCSV_UTIL_H
-#define CCSV_UTIL_H
+#ifndef OB_CSV_UTIL_H
+#define OB_CSV_UTIL_H
 
 #ifndef _WIN32
     #define _FILE_OFFSET_BITS 64
@@ -52,21 +52,21 @@ extern "C" {
     #endif
 #endif
 
-#ifndef CCSV_OFFSETOF
+#ifndef OB_CSV_OFFSETOF
     /* C++ */
     #if defined(__cplusplus)
 
         #if __cplusplus >= 201103L
             #include <cstddef>
-            #define CCSV_OFFSETOF(type, member) offsetof(type, member)
+            #define OB_CSV_OFFSETOF(type, member) offsetof(type, member)
         #else
             #if defined(__GNUC__) || defined(__clang__)
-                #define CCSV_OFFSETOF(type, member) __builtin_offsetof(type, member)
+                #define OB_CSV_OFFSETOF(type, member) __builtin_offsetof(type, member)
             #elif defined(_MSC_VER)
                 #include <stddef.h>
-                #define CCSV_OFFSETOF(type, member) offsetof(type, member)
+                #define OB_CSV_OFFSETOF(type, member) offsetof(type, member)
             #else
-                #define CCSV_OFFSETOF(type, member) ((size_t)&(((type*)0)->member))
+                #define OB_CSV_OFFSETOF(type, member) ((size_t)&(((type*)0)->member))
             #endif
         #endif
 
@@ -74,27 +74,27 @@ extern "C" {
     #else
         #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 198901L)
             #include <stddef.h>
-            #define CCSV_OFFSETOF(type, member) offsetof(type, member)
+            #define OB_CSV_OFFSETOF(type, member) offsetof(type, member)
         #else
             #if defined(__GNUC__) || defined(__clang__)
-                #define CCSV_OFFSETOF(type, member) __builtin_offsetof(type, member)
+                #define OB_CSV_OFFSETOF(type, member) __builtin_offsetof(type, member)
             #else
-                #define CCSV_OFFSETOF(type, member) ((size_t)&(((type*)0)->member))
+                #define OB_CSV_OFFSETOF(type, member) ((size_t)&(((type*)0)->member))
             #endif
         #endif
 
     #endif
 #endif
 
-#ifndef CCSV_MEMBERSIZE
-    #define CCSV_MEMBERSIZE(TYPE, MEMBER) sizeof(((TYPE *)NULL)->MEMBER)
+#ifndef OB_CSV_MEMBERSIZE
+    #define OB_CSV_MEMBERSIZE(TYPE, MEMBER) sizeof(((TYPE *)NULL)->MEMBER)
 #endif
 
-void     CCSV_print_bytes   (const void *buffer, const size_t size);
-uint64_t CCSV_usec_timestamp(void);
+void     OB_CSV_print_bytes   (const void *buffer, const size_t size);
+uint64_t OB_CSV_usec_timestamp(void);
 
-size_t   CCSV_safe_mult              (size_t a, size_t b, bool *success);
-bool     CCSV_check_unsigned_mult_overflow(unsigned a, unsigned b);
+size_t   OB_CSV_safe_mult              (size_t a, size_t b, bool *success);
+bool     OB_CSV_check_unsigned_mult_overflow(unsigned a, unsigned b);
 
 #endif
 

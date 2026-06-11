@@ -10,17 +10,17 @@ SOURCE        := *.c
 
 static: $(SOURCE)
 	$(CC) $(INCLUDES) $(FLAGS) $(STD) -D NDEBUG -O3 -c $(SOURCE)
-	ar rcs ccsv.a *.o
+	ar rcs obcsv.a *.o
 	make cleanup
 
 static++: $(SOURCE)
 	$(CC++) $(INCLUDES) $(FLAGS++) $(STD++) -D NDEBUG -O3 -c $(SOURCE)
-	ar rcs ccsv++.a *.o
+	ar rcs obcsv++.a *.o
 	make cleanup
 
 debug_static: $(SOURCE)
 	$(CC) $(INCLUDES) $(FLAGS) $(STD) -g -O0 -c $(SOURCE)
-	ar rcs ccsvd.a *.o
+	ar rcs obcsvd.a *.o
 	make cleanup
 
 all: static static++ test1.exe test1++.exe

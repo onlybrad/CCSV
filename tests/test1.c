@@ -1,29 +1,29 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "../ccsv.h"
+#include "../obcsv.h"
 #include "../util.h"
 
-static void test_CCSV_from_file(void) {
+static void test_OB_CSV_from_file(void) {
     struct CCSV csv;
-    enum CCSV_Error error = CCSV_from_file(&csv, "tests/test1.csv", ',');
-    if(error != CCSV_ERROR_NONE) {
+    enum OB_CSV_Error error = OB_CSV_from_file(&csv, "tests/test1.csv", ',');
+    if(error != OB_CSV_ERROR_NONE) {
         exit(EXIT_FAILURE);
     }
 
-    CCSV_Row row;
-    error = CCSV_next_row(&csv, &row);
-    while(error == CCSV_ERROR_NONE) {
+    OB_CSV_Row row;
+    error = OB_CSV_next_row(&csv, &row);
+    while(error == OB_CSV_ERROR_NONE) {
         for(unsigned i = 0U; i < row.count - 1U; i++) {
             printf("%s, ", row.data[i]);
         }
         puts(row.data[row.count - 1U]);
-        error = CCSV_next_row(&csv, &row);
+        error = OB_CSV_next_row(&csv, &row);
     }
 
-    CCSV_free(&csv);
+    OB_CSV_free(&csv);
 }
 
-static void test_CCSV_to_file(void) {
+static void test_OB_CSV_to_file(void) {
     struct Row {
         const char *name;
         unsigned    age;
@@ -42,28 +42,28 @@ static void test_CCSV_to_file(void) {
         {"Person4", 10, 100, false}
     };
 
-    struct CCSV_StructMember headers_members[] = {
-        {CCSV_TYPE_STRING, sizeof(const char*) * 0},
-        {CCSV_TYPE_STRING, sizeof(const char*) * 1},
-        {CCSV_TYPE_STRING, sizeof(const char*) * 2},
-        {CCSV_TYPE_STRING, sizeof(const char*) * 3},
+    struct OB_CSV_StructMember headers_members[] = {
+        {OB_CSV_TYPE_STRING, sizeof(const char*) * 0},
+        {OB_CSV_TYPE_STRING, sizeof(const char*) * 1},
+        {OB_CSV_TYPE_STRING, sizeof(const char*) * 2},
+        {OB_CSV_TYPE_STRING, sizeof(const char*) * 3},
     };
 
-    struct CCSV_StructMember rows_members[] = {
-        {CCSV_TYPE_STRING, CCSV_OFFSETOF(struct Row, name)},
-        {CCSV_TYPE_UINT,   CCSV_OFFSETOF(struct Row, age)},
-        {CCSV_TYPE_INT32,  CCSV_OFFSETOF(struct Row, money)},
-        {CCSV_TYPE_BOOL,   CCSV_OFFSETOF(struct Row, is_noob)},
+    struct OB_CSV_StructMember rows_members[] = {
+        {OB_CSV_TYPE_STRING, OB_CSV_OFFSETOF(struct Row, name)},
+        {OB_CSV_TYPE_UINT,   OB_CSV_OFFSETOF(struct Row, age)},
+        {OB_CSV_TYPE_INT32,  OB_CSV_OFFSETOF(struct Row, money)},
+        {OB_CSV_TYPE_BOOL,   OB_CSV_OFFSETOF(struct Row, is_noob)},
     };
 
-    struct CCSV_Structs headers;
+    struct OB_CSV_Structs headers;
     headers.data         = headers_data;
     headers.members      = headers_members;
     headers.member_count = (unsigned)ARRAY_LENGTH(headers_members);
     headers.count        = 1; //the whole array counts as 1 "struct"
     headers.size         = sizeof(headers_data); //the size of "struct" is the whole array
     
-    struct CCSV_Structs rows;
+    struct OB_CSV_Structs rows;
     rows.data         = rows_data;
     rows.members      = rows_members;
     rows.member_count = (unsigned)ARRAY_LENGTH(rows_members);
@@ -71,7 +71,7 @@ static void test_CCSV_to_file(void) {
     rows.size         = sizeof(struct Row);
 
     const char *const path = "./tests/person.csv";
-    if(!CCSV_to_file(&headers, &rows, path, ',')) {
+    if(!OB_CSV_to_file(&headers, &rows, path, ',')) {
         exit(EXIT_FAILURE);
     }
 
@@ -79,8 +79,8 @@ static void test_CCSV_to_file(void) {
 }
 
 int main(void) {
-    test_CCSV_from_file();
-    test_CCSV_to_file();
+    test_OB_CSV_from_file();
+    test_OB_CSV_to_file();
 
     return EXIT_SUCCESS;
 }

@@ -3,8 +3,8 @@
 #include "row.h"
 #include "util.h"
 
-EXTERN_C void CCSV_Row_init(CCSV_Row *const row) {
+EXTERN_C void OB_CSV_Row_init(OB_CSV_Row *const row) {
     assert(row != NULL);
 
-    CCSV_Strings_init(row);
+    OB_CSV_Strings_init(row);
 }

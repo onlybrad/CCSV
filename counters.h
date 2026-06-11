@@ -4,16 +4,16 @@ extern "C" {
 
 #include <stdint.h>
 
-#ifndef CCSV_COUNTERS_H
-#define CCSV_COUNTERS_H
+#ifndef OB_CSV_COUNTERS_H
+#define OB_CSV_COUNTERS_H
 
-struct CCSV_Counters {
+struct OB_CSV_Counters {
     size_t strings,
            max_columns,
            chars;
 };
 
-void CCSV_Counters_init(struct CCSV_Counters *const counters);
+void OB_CSV_Counters_init(struct OB_CSV_Counters *const counters);
 
 #endif
 

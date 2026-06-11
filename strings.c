@@ -5,9 +5,9 @@
 #include "strings.h"
 #include "util.h"
 
-#define CCSV_STRINGS_MINIMUM_CAPACITY 8U
+#define OB_CSV_STRINGS_MINIMUM_CAPACITY 8U
 
-EXTERN_C void CCSV_Strings_init(struct CCSV_Strings *const strings) {
+EXTERN_C void OB_CSV_Strings_init(struct OB_CSV_Strings *const strings) {
     assert(strings != NULL);
 
     strings->data         = NULL;
@@ -16,19 +16,19 @@ EXTERN_C void CCSV_Strings_init(struct CCSV_Strings *const strings) {
     strings->total_length = 0U;
 }
 
-EXTERN_C bool CCSV_Strings_reserve(struct CCSV_Strings *const strings, size_t capacity, struct CCSV_Arenas *const arenas) {
+EXTERN_C bool OB_CSV_Strings_reserve(struct OB_CSV_Strings *const strings, size_t capacity, struct OB_CSV_Arenas *const arenas) {
     assert(strings != NULL);
     assert(arenas != NULL);
 
     if(capacity == 0) {
-        capacity = CCSV_STRINGS_MINIMUM_CAPACITY;
+        capacity = OB_CSV_STRINGS_MINIMUM_CAPACITY;
     }
 
     if(capacity <= strings->capacity) {
         return true;
     }
 
-    char **data = (char**)CCSV_ARENA_ALLOC(&arenas->strings, capacity, char*);
+    char **data = (char**)OB_CSV_ARENA_ALLOC(&arenas->strings, capacity, char*);
     if(data == NULL) {
         return false;
     }
@@ -40,7 +40,7 @@ EXTERN_C bool CCSV_Strings_reserve(struct CCSV_Strings *const strings, size_t ca
     return true;
 }
 
-EXTERN_C bool CCSV_Strings_push(struct CCSV_Strings *const strings, const char *const string, const size_t length, struct CCSV_Arenas *const arenas) {
+EXTERN_C bool OB_CSV_Strings_push(struct OB_CSV_Strings *const strings, const char *const string, const size_t length, struct OB_CSV_Arenas *const arenas) {
     assert(strings != NULL);
     assert(string != NULL);
 
@@ -50,17 +50,17 @@ EXTERN_C bool CCSV_Strings_push(struct CCSV_Strings *const strings, const char *
 
     if(strings->count == strings->capacity) {
         bool success;
-        const size_t capacity = CCSV_safe_mult(strings->capacity, 2, &success);
+        const size_t capacity = OB_CSV_safe_mult(strings->capacity, 2, &success);
         if(!success) {
             return false;
         }
 
-        if(!CCSV_Strings_reserve(strings, capacity, arenas)) {
+        if(!OB_CSV_Strings_reserve(strings, capacity, arenas)) {
             return false;
         }
     }
 
-    char *const copy = CCSV_ARENA_ALLOC(&arenas->chars, length + 1U, char);
+    char *const copy = OB_CSV_ARENA_ALLOC(&arenas->chars, length + 1U, char);
     if(copy == NULL) {
         return false;
     }
@@ -73,19 +73,19 @@ EXTERN_C bool CCSV_Strings_push(struct CCSV_Strings *const strings, const char *
     return true;
 }
 
-EXTERN_C bool CCSV_Strings_push_nocopy(struct CCSV_Strings *const strings, char *const string, struct CCSV_Arenas *const arenas) {
+EXTERN_C bool OB_CSV_Strings_push_nocopy(struct OB_CSV_Strings *const strings, char *const string, struct OB_CSV_Arenas *const arenas) {
     if(strings->count > SIZE_MAX - 1U) {
         return false;
     }
 
     if(strings->count == strings->capacity) {
         bool success;
-        const size_t capacity = CCSV_safe_mult(strings->capacity, 2, &success);
+        const size_t capacity = OB_CSV_safe_mult(strings->capacity, 2, &success);
         if(!success) {
             return false;
         }
 
-        if(!CCSV_Strings_reserve(strings, capacity, arenas)) {
+        if(!OB_CSV_Strings_reserve(strings, capacity, arenas)) {
             return false;
         }
     }
@@ -98,13 +98,13 @@ EXTERN_C bool CCSV_Strings_push_nocopy(struct CCSV_Strings *const strings, char 
     return true;
 }
 
-bool CCSV_Strings_concat(const struct CCSV_Strings *const src, struct CCSV_Strings *const dst, struct CCSV_Arenas *arenas) {
+bool OB_CSV_Strings_concat(const struct OB_CSV_Strings *const src, struct OB_CSV_Strings *const dst, struct OB_CSV_Arenas *arenas) {
     assert(src != NULL);
     assert(dst != NULL);
     assert(src != dst);
     assert(arenas != NULL);
 
-    char *concat_string = CCSV_ARENA_ALLOC(&arenas->chars, src->total_length + 1U, char);
+    char *concat_string = OB_CSV_ARENA_ALLOC(&arenas->chars, src->total_length + 1U, char);
     if(concat_string == NULL) {
         return false;
     }
@@ -117,10 +117,10 @@ bool CCSV_Strings_concat(const struct CCSV_Strings *const src, struct CCSV_Strin
         concat_string += length;
     }
 
-    return CCSV_Strings_push_nocopy(dst, concat_string_start, arenas);
+    return OB_CSV_Strings_push_nocopy(dst, concat_string_start, arenas);
 }
 
-void CCSV_Strings_reset(struct CCSV_Strings *const strings) {
+void OB_CSV_Strings_reset(struct OB_CSV_Strings *const strings) {
     assert(strings != NULL);
 
     strings->count        = 0U;

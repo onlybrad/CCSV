@@ -2,14 +2,14 @@
 extern "C" {
 #endif
 
-#ifndef CCSV_ROW_H
-#define CCSV_ROW_H
+#ifndef OB_CSV_ROW_H
+#define OB_CSV_ROW_H
 
 #include "strings.h"
 
-typedef struct CCSV_Strings CCSV_Row;
+typedef struct OB_CSV_Strings OB_CSV_Row;
 
-void CCSV_Row_init(CCSV_Row*);
+void OB_CSV_Row_init(OB_CSV_Row*);
 
 #endif
 

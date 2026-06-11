@@ -2,27 +2,27 @@
 extern "C" {
 #endif
 
-#ifndef CCSV_Tokens_H
-#define CCSV_Tokens_H
+#ifndef OB_CSV_Tokens_H
+#define OB_CSV_Tokens_H
 
-#define CCSV_TOKENS_MINIMUM_CAPACITY 8
+#define OB_CSV_TOKENS_MINIMUM_CAPACITY 8
 
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "token.h"
 
-struct CCSV_Tokens {
-    struct CCSV_Token *data;
+struct OB_CSV_Tokens {
+    struct OB_CSV_Token *data;
     size_t             count,
                        capacity;
 };
 
-void CCSV_Tokens_init              (struct CCSV_Tokens *tokens);
-void CCSV_Tokens_free              (struct CCSV_Tokens *tokens);
-bool CCSV_Tokens_reserve           (struct CCSV_Tokens *tokens, size_t capacity);
-void CCSV_Tokens_reset             (struct CCSV_Tokens *tokens);
-struct CCSV_Token *CCSV_Tokens_next(struct CCSV_Tokens *tokens);
+void OB_CSV_Tokens_init              (struct OB_CSV_Tokens *tokens);
+void OB_CSV_Tokens_free              (struct OB_CSV_Tokens *tokens);
+bool OB_CSV_Tokens_reserve           (struct OB_CSV_Tokens *tokens, size_t capacity);
+void OB_CSV_Tokens_reset             (struct OB_CSV_Tokens *tokens);
+struct OB_CSV_Token *OB_CSV_Tokens_next(struct OB_CSV_Tokens *tokens);
 
 #endif
 
